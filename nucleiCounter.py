@@ -51,6 +51,11 @@ class Application(tk.Frame):
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12)).pack(fill='x')
 
+        tk.Label(self.top_left,
+            text = """Enable debug?""",
+            anchor = 'e',
+            font = tkFont.Font(family="Calibri", size=12)).pack(fill='x')
+
         button = tk.Button(self.top_right_upper,
                           text="Browse",                          
                           command=lambda: self.select_folder(),
@@ -78,25 +83,42 @@ class Application(tk.Frame):
         o4_ch = None
         marker_index = None
 
+        debug = tk.BooleanVar()
+        debug.set(False)
+        tk.Checkbutton(self.top_right, text='', variable=debug,
+            onvalue=True, offvalue=False,
+            anchor='w').pack(fill='x')
+
         button2 = tk.Button(self.bottom_frame,
                           text="Start",
                           command=lambda: self.start_analysis(self.root.get(), 
                                                             pattern.get(), 
                                                             dapi_ch.get(), 
-                                                            o4_ch, marker_index),
+                                                            o4_ch, marker_index,
+                                                            debug = debug.get()),
                           font = tkFont.Font(family="Calibri", size=12))
         button2.pack(side="top")
 
         tk.Label(self.bottom_frame,
             text = """Output""",
             justify = tk.LEFT,
-            font = tkFont.Font(family="Calibri", size=12)).pack(side='left')
+            anchor = 'n',
+            font = tkFont.Font(family="Calibri", size=12)).pack(side='left', fill='y')
+
+        self.console_scrollbar = tk.Scrollbar(self.bottom_frame, orient=tk.VERTICAL)
+        self.console_scrollbar.pack(side="right",fill='y')
 
         self.console = tk.Text(self.bottom_frame,
-                          font = tkFont.Font(family="Calibri", size=12))
+                        yscrollcommand = self.console_scrollbar,
+                        font = tkFont.Font(family="Calibri", size=12))
         self.console.pack(side="top", fill="both", expand = True)
+        self.console.bind("<Key>", lambda e: "break")
 
+        self.console_scrollbar.config(command=self.console.yview)
 
+        self.progress = Progressbar(self.bottom_frame,
+            length=200, orient=tk.HORIZONTAL, mode='determinate')
+        self.progress.pack(side="bottom", fill="y", expand="True")
 
     def select_folder(self):
         import os
@@ -106,6 +128,7 @@ class Application(tk.Frame):
 
         # start analysis
         files = find(pattern, root)
+        self.console.delete(1.0,tk.END)
 
         if (len(files)==0):
             self.console.insert("end",f"No files found in '{root}'. Check the input.")
@@ -122,16 +145,19 @@ class Application(tk.Frame):
             #files = list(files[i] for i in random.sample(list(range(len(files))), 5))
 
             # select five files to do manual count comparisons
+            self.console.insert("end","\ndebug: selecting first five files to do manual count comparisons") 
             files = list(files[i] for i in range(7,12)) 
 
         results = []
 
-        self.progress = Progressbar(self.bottom_frame,
-            length=200, cursor='spider',orient=tk.HORIZONTAL, mode='determinate')
-        self.progress.pack(side="bottom", fill="y", expand="True")
-
+        # rest progress bar
+        self.progress["value"]=0
+        self.progress.update()
+        # calculate increment for progress bar
         i = 100/len(files)
+
         for file in files:
+            # increment progress bar
             self.progress["value"] += i
             self.progress.update()
 
@@ -149,14 +175,13 @@ class Application(tk.Frame):
             position = well_position[1]
 
             try:
-                sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=False)
+                sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=debug)
                 sCI.processDAPI(threshold_method='th2') # based on manual counts (see OneNote)
                 if debug:
                     sCI.reportResults()
-                
-                #self.console.insert('end', f"\nimgFile: {sCI.imgFile} found {sCI.nucleiCount} DAPI+ nuclei.")
-                #self.console.update()    
-
+                    self.console.insert('end', f"\nimgFile: {sCI.imgFile} found {sCI.nucleiCount} DAPI+ nuclei.")
+                    self.console.update()                 
+   
                 results.append({
                     'path': sCI.path,
                     'imgFile': sCI.imgFile,
@@ -177,9 +202,11 @@ class Application(tk.Frame):
             w.writeheader()
             w.writerows(results)
 
+        self.console.insert("end",f'\nResults saved to {filename}.')
         self.console.insert("end",'\nAll Done')
 
 # Starts application.
 root = tk.Tk()
+root.resizable(width=False, height=False)
 app = Application(master=root)
 app.mainloop()        
