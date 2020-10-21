@@ -1,22 +1,31 @@
 import random
 import numpy as np 
 
+# start JVM for compatibility with VSI files
+import javabridge
+import bioformats
+javabridge.start_vm(class_path=bioformats.JARS)
+
 from settings import Settings
 from singleCompositeImage import singleCompositeImage
 from commonFunctions import *
 
 settings = Settings()
 
+# manual settings
 folder = 0
-debug = False
+debug = True
+thres = 'th2'
+gamma = False
 
-# retrieve settings
+# retrieve settings using 'folder'
 root = settings.folder_dicts[folder]['root']
 pattern = settings.folder_dicts[folder]['pattern']
 files = find(pattern, root)
 dapi_ch = settings.folder_dicts[folder]['dapi_ch']
 o4_ch = settings.folder_dicts[folder]['o4_ch']
 marker_index = settings.folder_dicts[folder]['marker_index']
+
 
 # start analysis
 print(f"Found {len(files)} matching '{pattern}' in '{root}'")
@@ -48,8 +57,8 @@ for file in files:
     position = well_position[1]
 
     try:
-        sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=False)
-        sCI.processDAPI(threshold_method='th2') # based on manual counts (see OneNote)
+        sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=debug, gamma=gamma)
+        sCI.processDAPI(threshold_method=thres, gamma=gamma) # based on manual counts (see OneNote)
         if debug:
             sCI.reportResults()
 
@@ -72,5 +81,7 @@ with open(filename,'w',newline='') as f:
     w = csv.DictWriter(f, results[0].keys())
     w.writeheader()
     w.writerows(results)
+
+javabridge.kill_vm()
 
 print('All Done')

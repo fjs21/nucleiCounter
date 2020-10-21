@@ -6,6 +6,11 @@ import tkinter.font as tkFont
 import tkinter.filedialog as fileDialog
 from tkinter.ttk import Progressbar 
 
+# start JVM for compatibility with VSI files
+import javabridge
+import bioformats
+javabridge.start_vm(class_path=bioformats.JARS)
+
 from commonFunctions import *
 #from settings import Settings
 from singleCompositeImage import singleCompositeImage
@@ -145,8 +150,8 @@ class Application(tk.Frame):
             #files = list(files[i] for i in random.sample(list(range(len(files))), 5))
 
             # select five files to do manual count comparisons
-            self.console.insert("end","\ndebug: selecting first five files to do manual count comparisons") 
-            files = list(files[i] for i in range(7,12)) 
+            self.console.insert("end","\ndebug: selecting first two files to do manual count comparisons") 
+            files = list(files[i] for i in range(1,2)) 
 
         results = []
 
@@ -210,3 +215,4 @@ root = tk.Tk()
 root.resizable(width=False, height=False)
 app = Application(master=root)
 app.mainloop()        
+javabridge.kill_vm()

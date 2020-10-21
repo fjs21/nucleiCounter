@@ -6,6 +6,9 @@ import math
 import os, errno
 from pathlib import Path
 
+# to enable VSI file support
+import bioformats
+
 from settings import Settings
 from commonFunctions import fullPath 
 
@@ -27,6 +30,8 @@ class singleCompositeImage():
         self.o4_ch = o4_ch
         
         self.scalefactor = scalefactor
+        self.gamma = gamma
+        self.debug = debug
 
         self.settings = Settings()
 
@@ -34,17 +39,17 @@ class singleCompositeImage():
         self.images = self.loadImages()
         # standardize scale
         if self.scalefactor != 1:
-            self.scaleImages(scalefactor=scalefactor, debug=debug)
+            self.scaleImages(scalefactor=scalefactor, debug=self.debug)
         # get color image for export
         if(self.o4_ch is None):
-            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], gamma=gamma)
+            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], gamma=self.gamma)
         else:
-            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch], gamma=gamma)
+            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch], gamma=self.gamma)
 
-    def processDAPI(self, threshold_method: str, debug: bool=False):
-        self.img = self.proccessNuclearImage(self.images[self.dapi_ch])
+    def processDAPI(self, threshold_method: str, gamma: bool=False, debug: bool=False):
+        self.nuclei_img = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma)
         self.threshold_method = threshold_method
-        self.imageThreshold(self.img)
+        self.imageThreshold(self.nuclei_img, debug)
         
         self.output = self.thresholdSegmentation(debug)
         self.centroids = self.output[3][1:,]
@@ -70,7 +75,7 @@ class singleCompositeImage():
         # assign markers to cells
         self.assignMarkersToCells(debug)
 
-    def loadImages(self, debug=False):
+    def loadImages(self, debug: bool = False):
         """IMAGE LOADING"""
         fullpath = fullPath(self.path, self.imgFile)
         if Path(fullpath).suffix == '.tif':
@@ -82,22 +87,25 @@ class singleCompositeImage():
 
         if self.debug or debug:
             print(f"Loaded '{self.imgFile}' from '{self.path}'\n with {len(images)} channels.")
-            self.showImages(images)    
+            titles = []
+            for i in range(len(images)):
+                if (i == self.dapi_ch):
+                    titles.append('DAPI')
+                elif (i == self.o4_ch):
+                    titles.append('O4')
+                else:
+                    titles.append(f'channel #{i}')
+
+            self.showImages(images, titles, 'Loaded Images')    
 
         return images
 
-    def openVSI(self):
+    def openVSI(self, debug: bool = False):
         """Using bioformats to open .vsi image"""
-        import javabridge
-        import bioformats
-
-        javabridge.start_vm(class_path=bioformats.JARS)
-
         fullpath = fullPath(self.path, self.imgFile)
-        images = bioformats.load_image(fullpath)
+        images = bioformats.load_image(fullpath, rescale=False)
         images = cv.split(images)
-        
-        javabridge.kill_vm()
+
         return images
 
     def scaleImages(self, scalefactor, debug=False):
@@ -110,26 +118,42 @@ class singleCompositeImage():
             self.images[i] = cv.resize(self.images[i], dim, interpolation = cv.INTER_AREA)
         print(self.images[0].shape)
 
-    def showImages(self, images, titles=''):
+    def showImages(self, images, titles='', suptitle=''):
+        mng = plt.get_current_fig_manager()
+        mng.full_screen_toggle()
+
+        # doesn't show both only most recent...
+        #plt.suptitle(suptitle)
+        plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
+
         cols = int(len(images) // 2 + len(images) % 2)
         rows = int(len(images) // cols + len(images) % cols)
+        #plt.figure(figsize = (rows,cols))
         # print("cells/rows",cols,rows)
         for i in range(len(images)):
             img = images[i]
+            img = self.gammaCorrect(img)
             img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
             plt.subplot(rows,cols,i+1),plt.imshow(img,'gray')
             if titles != '':
                 plt.title(titles[i])
             plt.xticks([]),plt.yticks([])
+        plt.tight_layout()
         plt.show()
 
-    def proccessNuclearImage(self, img):
+    def proccessNuclearImage(self, img, gamma: bool = False, debug: bool = False):
         """Function to proccess a flourescence image with nuclear localized signal (e.g. DAPI)."""
         # invert image 
         img = cv.bitwise_not(img)
+        if gamma:
+            if debug:
+                self.plotHistogram(self.images[self.dapi_ch])
+            img = self.gammaCorrect(img)
         # normalize (stretch histogram and convert to 8-bit)
         img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-        # consider other normalization strategies
+        
+        # FUTURE: consider other normalization strategies
+
         return img
 
     def imageThreshold(self, img, debug=False):
@@ -164,8 +188,15 @@ class singleCompositeImage():
         sure_bg = cv.dilate(opening,kernel,iterations=3)
 
         # 3. Finding sure foreground area
-        dist_transform = cv.distanceTransform(opening,cv.DIST_L2,5)
-        ret, sure_fg = cv.threshold(dist_transform,0.4*dist_transform.max(),255,0)
+        dist_transform = cv.distanceTransform(opening,cv.DIST_L2,5) # calculates distance from boundary
+        
+        dt = dist_transform[dist_transform != 0] #remove zeros
+        
+        if debug:
+            print(f"Max distance: {dist_transform.max()}")
+            print(f"Median distance: {np.median(dt)}")
+
+        ret, sure_fg = cv.threshold(dist_transform, np.median(dt), 255, 0) # use median distance (assume most cells are singlets)
 
         # 4. Finding unknown region
         sure_fg = np.uint8(sure_fg) 
@@ -181,10 +212,11 @@ class singleCompositeImage():
         img = cv.normalize(src=self.images[self.dapi_ch], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         markers = cv.watershed(img,markers)
+
         img[markers == -1] = [255,0,0]
 
-        titles = ['threshold','opening','sure_bg','dist_transform','sure_fg','watershed']
-        images = [self.thresh, opening, sure_bg, dist_transform, sure_fg, img]
+        titles = ['threshold', 'opening', 'dist_transform', 'sure_fg', 'unknown', 'watershed']
+        images = [self.thresh, opening, dist_transform, sure_fg, unknown, img]
 
         if self.debug or debug:
             self.showImages(images,titles)
@@ -406,6 +438,34 @@ class singleCompositeImage():
         """Gamma correct."""
         max_pixel = np.max(image)
         corrected_image = image
-        corrected_image = corrected_image / max_pixel
+        corrected_image = (corrected_image / max_pixel) 
         corrected_image = np.power(corrected_image, gamma)
+        corrected_image = corrected_image * max_pixel
         return corrected_image
+
+    def plotHistogram(self, image):
+        """Plot a histogram of an image."""
+        mng = plt.get_current_fig_manager()
+        mng.full_screen_toggle()
+
+        img = cv.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        plt.subplot(2,2,1),plt.imshow(img)
+        plt.title('Original Image')
+        hist = cv.calcHist(img,[0],None,[255],[0,255])
+        plt.subplot(2,2,2),plt.plot(hist, color='k')
+        plt.xlim([0, 255])
+        plt.yscale('log')
+
+        img_g = self.gammaCorrect(image)
+        img_g = cv.normalize(src=img_g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        plt.subplot(2,2,3),plt.imshow(img_g)
+        plt.title('Gamma Corrected Image')
+        hist_g = cv.calcHist(img_g,[0],None,[255],[0,255])
+        plt.subplot(2,2,4),plt.plot(hist_g, color='k')       
+        plt.xlim([0, 255])
+        plt.yscale('log')
+
+        plt.suptitle('Gamma Correction')
+
+        plt.tight_layout()
+        plt.show()

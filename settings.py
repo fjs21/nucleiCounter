@@ -14,7 +14,7 @@ class Settings:
                 # name: foldername        
                 'name': 'Test',
                 # root: path to folder
-                'root': 'data',
+                'root': 'C:\\Users\\fjs21\\OneDrive\\Research&Lab\\Data\\Transwell Experiments 2020',
                 # pattern: define file
                 'pattern': '*.tif',
                 # which channel is DAPI?
@@ -24,9 +24,22 @@ class Settings:
                 # which marker counts the O4 counts
                 'marker_index' : None
             },
-        ]
+            {
+                # name: foldername        
+                'name': 'Test VSI',
+                # root: path to folder
+                'root': 'C:\\scratch\\sep 2020 sample',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 1,
+                # which channel is O4?
+                'o4_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None
+            },        ]
 
-        # Define cutoff over which cell will not be classified
+        # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
 
         # Keras Model
