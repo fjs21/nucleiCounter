@@ -21,7 +21,7 @@ settings = Settings()
 folder = 5
 debug = False
 thres = 'th2'
-gamma = 4
+gamma = 3.5
 
 # retrieve settings using 'folder'
 root = settings.folder_dicts[folder]['root']
@@ -47,6 +47,7 @@ if debug:
     files = list(files[i] for i in range(3,4)) 
 else:
     print("Starting to analyze images")
+
 results = []
 
 def parseFileName(imgFile):
@@ -103,16 +104,19 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
                 ret,EdU_DAPI_markers = cv.connectedComponents(EdU_DAPI_overlap)
                 EdU_count2 = EdU_DAPI_markers.max() # count does not use watershed step
 
+                
+                """ Generate a summary PDF to quickly review DAPI and EdU counts. """
                 EdU_centroid_x = EdU_output[3][1:,0].astype(int)
                 EdU_centroid_y = EdU_output[3][1:,1].astype(int)
 
-                """ Generate a summary PDF to quickly review DAPI and EdU counts. """
                 plt.figure(figsize= (20,10))
                 plt.suptitle(f"{path}\\{imgFile}")
                 plt.subplot(1,2,1), plt.imshow(sCI.nucleiWatershed)
+                plt.subplot(1,2,1), plt.title(f"DAPI+: {sCI.nucleiCount}")
                 plt.subplot(1,2,2), plt.imshow(EdU_watershed)
                 plt.subplot(1,2,2), plt.scatter(sCI.centroid_x,sCI.centroid_y,s=0.5)
                 plt.subplot(1,2,2), plt.scatter(EdU_centroid_x,EdU_centroid_y,c="yellow",s=0.5)
+                plt.subplot(1,2,2), plt.title(f"EdU+DAPI+: {EdU_count2}")
                 export_pdf.savefig(dpi=300)
                 plt.close()
 

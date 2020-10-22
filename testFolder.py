@@ -46,15 +46,17 @@ marker_index = settings.folder_dicts[folder]['marker_index']
 # start analysis
 print(f"Found {len(files)} matching '{pattern}' in '{root}'")
 print("***************************")
-print("Starting to analyze images")
 
 # select file sample
 if debug:
+    print("Running debug on a few images...")
     # select five files at random
-    # files = list(files[i] for i in random.sample(list(range(len(files))), 5))
+    # files = list(files[i] for i in random.sample(list(range(len(files))), 1))
 
     # select five files to do manual count comparisons
-    files = list(files[i] for i in range(1,2)) 
+    files = list(files[i] for i in range(3,4)) 
+else:
+    print("Starting to analyze images")
 
 results = []
 
