@@ -21,12 +21,14 @@ class Settings:
                 'dapi_ch': 0,
                 # which channel is O4?
                 'o4_ch': None,
+                # which channel is EdU?
+                'EdU_ch': None,                
                 # which marker counts the O4 counts
                 'marker_index' : None
             },
             {
                 # name: foldername        
-                'name': 'Test VSI',
+                'name': 'Roopa September 2020 BK experiment',
                 # root: path to folder
                 'root': 'C:\\scratch\\sep 2020 sample',
                 # pattern: define file
@@ -34,13 +36,63 @@ class Settings:
                 # which channel is DAPI?
                 'dapi_ch': 1,
                 # which channel is O4?
-                'o4_ch': None,
+                'o4_ch': 2,
+                # which channel is EdU?
+                'EdU_ch': None,
                 # which marker counts the O4 counts
                 'marker_index' : None
-            },        ]
+            },        
+            {
+                # name: foldername        
+                'name': 'Jackie Transwell and IGFBP2 experiment',
+                # root: path to folder
+                'root': 'C:\\scratch\\Transwell + IGFBP2 Ab',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                # which channel is O4?
+                'o4_ch': None,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                # which marker counts the O4 counts
+                'marker_index' : None
+            },
+            {
+                # name: foldername        
+                'name': 'Roopa Feb 2020 BK experiment',
+                # root: path to folder
+                'root': 'Y:\\People\\Roopa\\dk si alpha expts\\feb 2020 sample',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 1,
+                # which channel is O4?
+                'o4_ch': 2,
+                # which channel is EdU?
+                'EdU_ch': None,                
+                # which marker counts the O4 counts
+                'marker_index' : None
+            },  
+            {
+                # name: foldername        
+                'name': 'Roopa July 31 2020 BK experiment',
+                # root: path to folder
+                'root': 'Y:\\People\\Roopa\\dk si alpha expts\\july 2020',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 1,
+                # which channel is O4?
+                'o4_ch': 2,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None
+            },          ]             
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
 
         # Keras Model
-        #self.kerasModel = 'from ccr/o4counter_wAug_5.1.h5'
+        self.kerasModel = 'o4counter_wAug_5.1.h5'

@@ -1,4 +1,5 @@
 import numpy as np 
+from matplotlib.backends.backend_pdf import PdfPages
 
 # start JVM for compatibility with VSI files
 import javabridge
@@ -8,6 +9,8 @@ javabridge.start_vm(class_path=bioformats.JARS)
 from settings import Settings
 from singleCompositeImage import singleCompositeImage
 from commonFunctions import *
+
+settings = Settings()
 
 # path = 'C:\\Users\\fjs21\\OneDrive\\Research&Lab\\Data\\Transwell Experiments 2020\\Image Data from Pilot Experiment' 
 # imgFile = 'Post scrape on C2_C2-1_8365.tif' # Dapi in ch 1
@@ -20,18 +23,30 @@ path = 'C:\\scratch\\sep 2020 sample'
 imgFile = 'sibk sep 2020 sample_B2-11_8232.vsi' # Dapi in ch 2
 dapi_ch = 1
 o4_ch = 2
-gamma = False
+EdU_ch = None
+gamma = True
 thres = "th2"
+model = loadKerasModel(settings.kerasModel)
 
 # marker_index = 5
 width = height = 128
 
-sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=True, gamma=gamma)
+sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, EdU_ch=EdU_ch, scalefactor=1, debug=False, gamma=gamma)
 sCI.processDAPI(threshold_method=thres, gamma=gamma)
 sCI.processCells()
 # sCI.processMarkers(markerFile, marker_index, debug=True)
-sCI.reportResults()
 # print(sCI.centroids_classification[3])
+sCI.reportResults()
 
+if "model" in locals():
+	sCI.getPredictions(model)
+
+	with PdfPages('test.pdf') as export_pdf:
+		sCI.processPredictions(export_pdf, debug=False)
+	print(f"Total cell classified: {sCI.o4pos_count+sCI.o4neg_count}")
+	print(f"O4+ cells: {sCI.o4pos_count}")
+	print("O4%: " + "{:.2%}".format(sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)))
+
+javabridge.kill_vm()
 print('All Done')
 

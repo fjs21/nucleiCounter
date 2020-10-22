@@ -99,3 +99,8 @@ def fix_unicode_filenames(folder):
     #     for markerFile in markerFiles:
     #         chkName(fullPath(markerFile['path'],markerFile['name'],binary=True))
     print("** All done! This folder can now be analyzed. **")
+
+def loadKerasModel(filename):
+    """Load h5 model file."""
+    from keras.models import load_model
+    return load_model(filename)

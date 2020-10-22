@@ -14,7 +14,7 @@ from commonFunctions import fullPath
 
 class singleCompositeImage():
 
-    def __init__(self: str, path: str, imgFile: str, dapi_ch: int, o4_ch: int, 
+    def __init__(self: str, path: str, imgFile: str, dapi_ch: int, o4_ch: int=None, EdU_ch: int=None,
         # to take into account different magnifications across images and training set
         scalefactor: float = 1, 
         # gamma correct (0.5)
@@ -28,6 +28,7 @@ class singleCompositeImage():
         
         self.dapi_ch = dapi_ch
         self.o4_ch = o4_ch
+        self.EdU_ch = EdU_ch
         
         self.scalefactor = scalefactor
         self.gamma = gamma
@@ -42,8 +43,11 @@ class singleCompositeImage():
             self.scaleImages(scalefactor=scalefactor, debug=self.debug)
         # get color image for export
         if(self.o4_ch is None):
-            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], gamma=self.gamma)
-        else:
+            if(self.EdU_ch is not None):
+                self.rgb = self.colorImage(blue=self.images[self.dapi_ch], red=self.images[self.EdU_ch], gamma=self.gamma)
+            else:
+                self.rgb = self.colorImage(blue=self.images[self.dapi_ch], gamma=self.gamma)
+        elif(self.o4_ch is not None):
             self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch], gamma=self.gamma)
 
     def processDAPI(self, threshold_method: str, gamma: bool=False, debug: bool=False):
@@ -51,7 +55,7 @@ class singleCompositeImage():
         self.threshold_method = threshold_method
         self.imageThreshold(self.nuclei_img, debug)
         
-        self.output = self.thresholdSegmentation(debug)
+        self.nucleiCount, self.output, self.nucleiMask = self.thresholdSegmentation(self.dapi_ch, debug)
         self.centroids = self.output[3][1:,]
         self.centroid_x = self.centroids[:,0].astype(int)
         self.centroid_y = self.centroids[:,1].astype(int)
@@ -93,6 +97,8 @@ class singleCompositeImage():
                     titles.append('DAPI')
                 elif (i == self.o4_ch):
                     titles.append('O4')
+                elif (i == self.EdU_ch):
+                    titles.append('EdU')
                 else:
                     titles.append(f'channel #{i}')
 
@@ -177,7 +183,7 @@ class singleCompositeImage():
 
         self.thresh = cv.bitwise_not(eval(self.threshold_method))
 
-    def thresholdSegmentation(self, debug=False):
+    def thresholdSegmentation(self, channel, debug=False):
         """SEGMENTATION and WATERSHED"""
         # based on - https://docs.opencv.org/3.4/d3/db4/tutorial_py_watershed.html
         # 1. noise removal
@@ -209,7 +215,7 @@ class singleCompositeImage():
         # Now, mark the region of unknown with zero
         markers[unknown==255] = 0
 
-        img = cv.normalize(src=self.images[self.dapi_ch], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        img = cv.normalize(src=self.images[channel], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         markers = cv.watershed(img,markers)
 
@@ -221,11 +227,10 @@ class singleCompositeImage():
         if self.debug or debug:
             self.showImages(images,titles)
 
-        self.nucleiCount = markers.max()-1
-
+        count = markers.max()-1
         output = cv.connectedComponentsWithStats(sure_fg)
 
-        return(output)
+        return([count, output, sure_fg])
 
     # other functions of potential interest - findContours
     # NEXT FILTER ON SIZE, CIRCULARITY - GET X-Y centroid
@@ -433,6 +438,53 @@ class singleCompositeImage():
             return 1
         else:
             return 0
+
+    def processPredictions(self, export_pdf, debug: bool=False):
+        from matplotlib.patches import Rectangle
+
+        # bar width on plots to indicate which cells will not be counted
+        width = self.settings.width/2
+        height = self.settings.height/2
+
+        cell_info = np.zeros((len(self.cells),3))
+        # start per image counters for each classification
+        self.o4pos_count = 0
+        self.o4neg_count = 0
+        for i in range(len(self.cells)):
+            if not isinstance(self.cells[i], int):
+                # total_cellImages += 1
+                cell_type = self.classifyCell(i)
+                if cell_type == 1:
+                    title='O4+'
+                    self.o4pos_count += 1
+                    cell_info[i,:] = [self.centroid_x[i], self.centroid_y[i], 1]
+                else:
+                    title='O4-'
+                    self.o4neg_count += 1
+                    cell_info[i,:] = [self.centroid_x[i], self.centroid_y[i], 0]
+                # Show each cell with title label
+                if debug:
+                    self.showCell(i, title)
+        # Generate summary image
+        plt.figure(figsize= (10,10))
+        plt.imshow(self.rgb)
+        plt.title(os.path.join(self.path,self.imgFile)[-80:])
+        plt.scatter(cell_info[:,0],cell_info[:,1],c=cell_info[:,2],s=2)
+        # if marker_index != 0:
+        #     if pattern == '*MMStack.ome*.tif':
+        #         markerFile = findNewestMarkerFile(self.path)
+        #     elif pattern == '*Composite*.tif':
+        #         markerFile = findMatchingMarkerFile(self.path, self.imgFile)
+        #     if markerFile:
+        #         self.processMarkers(markerFile['name'], marker_index)
+        #         plt.scatter(self.markers_XY[:,0], self.markers_XY[:,1], s=2, c='green', alpha=0.5)
+        currentAxis = plt.gca()
+        currentAxis.add_patch(Rectangle((0,0),width,self.rgb.shape[0],fill="white",alpha=0.4,ec=None))
+        currentAxis.add_patch(Rectangle((self.rgb.shape[1]-width,0),width,self.rgb.shape[0],fill="white",alpha=0.4,ec=None))
+        currentAxis.add_patch(Rectangle((width,0),self.rgb.shape[1]-(2*width),height,fill="white",alpha=0.4,ec=None))
+        currentAxis.add_patch(Rectangle((width,self.rgb.shape[0]-height),self.rgb.shape[1]-(2*width),height,fill="white",alpha=0.4,ec=None))
+        export_pdf.savefig()
+        plt.close()
 
     def gammaCorrect(self, image, gamma=0.5):
         """Gamma correct."""
