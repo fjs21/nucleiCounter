@@ -18,7 +18,7 @@ class singleCompositeImage():
         # to take into account different magnifications across images and training set
         scalefactor: float = 1, 
         # gamma correct (0.5)
-        gamma: bool = True, 
+        gamma: float = 1.0, 
         debug: bool = False):
         
         self.debug = debug
@@ -50,12 +50,18 @@ class singleCompositeImage():
         elif(self.o4_ch is not None):
             self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch], gamma=self.gamma)
 
-    def processDAPI(self, threshold_method: str, gamma: bool=False, debug: bool=False):
-        self.nuclei_img = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma)
+    def processDAPI(self, threshold_method: str, gamma: float = -1, debug: bool=False):
+        """ Process DAPI channel. """
+
+        # if DAPI gamma not set, use global gamma setting
+        if (gamma == -1):
+            gamma = self.gamma
+
+        self.nuclei_img = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
         self.threshold_method = threshold_method
         self.imageThreshold(self.nuclei_img, debug)
         
-        self.nucleiCount, self.output, self.nucleiMask = self.thresholdSegmentation(self.dapi_ch, debug)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed = self.thresholdSegmentation(self.dapi_ch, debug)
         self.centroids = self.output[3][1:,]
         self.centroid_x = self.centroids[:,0].astype(int)
         self.centroid_y = self.centroids[:,1].astype(int)
@@ -147,17 +153,24 @@ class singleCompositeImage():
         plt.tight_layout()
         plt.show()
 
-    def proccessNuclearImage(self, img, gamma: bool = False, debug: bool = False):
+    def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):
         """Function to proccess a flourescence image with nuclear localized signal (e.g. DAPI)."""
-        # invert image 
-        img = cv.bitwise_not(img)
-        if gamma:
+
+        # gamma correct - load glbbal setting if not set by parameter
+        if gamma == -1:
+            gamma = self.gamma
+
+        if gamma != 1:
             if debug:
-                self.plotHistogram(self.images[self.dapi_ch])
+                self.plotHistogram(img)
             img = self.gammaCorrect(img)
+
         # normalize (stretch histogram and convert to 8-bit)
         img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-        
+ 
+        # invert image 
+        img = cv.bitwise_not(img)
+
         # FUTURE: consider other normalization strategies
 
         return img
@@ -215,7 +228,8 @@ class singleCompositeImage():
         # Now, mark the region of unknown with zero
         markers[unknown==255] = 0
 
-        img = cv.normalize(src=self.images[channel], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        img = self.proccessNuclearImage(self.images[channel])
+        img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         markers = cv.watershed(img,markers)
 
@@ -230,7 +244,7 @@ class singleCompositeImage():
         count = markers.max()-1
         output = cv.connectedComponentsWithStats(sure_fg)
 
-        return([count, output, sure_fg])
+        return([count, output, sure_fg, img])
 
     # other functions of potential interest - findContours
     # NEXT FILTER ON SIZE, CIRCULARITY - GET X-Y centroid
@@ -242,7 +256,7 @@ class singleCompositeImage():
         plt.subplot(1,2,2),plt.scatter(centroid_x,-centroid_y)
         plt.show()
 
-    def colorImage(self, blue, green='', red='', gamma=True):
+    def colorImage(self, blue, green='', red='', gamma: float = 1.0):
         """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
         if isinstance(red, np.ndarray):
             red = cv.normalize(src=red, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
@@ -251,7 +265,7 @@ class singleCompositeImage():
 
         if isinstance(green, np.ndarray):
             # add gama correction to O4 channel
-            if gamma:
+            if gamma != 1.0:
                 green = self.gammaCorrect(green)
             green = cv.normalize(src=green, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
@@ -486,12 +500,12 @@ class singleCompositeImage():
         export_pdf.savefig()
         plt.close()
 
-    def gammaCorrect(self, image, gamma=0.5):
+    def gammaCorrect(self, image):
         """Gamma correct."""
         max_pixel = np.max(image)
         corrected_image = image
         corrected_image = (corrected_image / max_pixel) 
-        corrected_image = np.power(corrected_image, gamma)
+        corrected_image = np.power(corrected_image, self.gamma)
         corrected_image = corrected_image * max_pixel
         return corrected_image
 

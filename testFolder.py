@@ -20,19 +20,19 @@ settings = Settings()
 # folder = 1
 # debug = False
 # thres = 'th2'
-# gamma = True
+# gamma = 0.5
 # model = loadKerasModel(settings.kerasModel)
 
 # IGBFP2 experiment
 # folder = 2
 # debug = False
 # thres = 'th2'
-# gamma = False
+# gamma = 1
 
-folder = 3
+folder = 4 # 3 
 debug = False
 thres = 'th2'
-gamma = True
+gamma = 1
 model = loadKerasModel(settings.kerasModel)
 
 # retrieve settings using 'folder'
@@ -58,31 +58,36 @@ if debug:
 
 results = []
 
+def parseFileName(imgFile):
+    """Extract stage, well and image position from file name."""
+    imgFile_split = imgFile.split('_')
+    if(imgFile_split[0].upper().find('PRE')>0):
+        stage = "PRE"
+    elif(imgFile_split[0].upper().find('POST')>0):
+        stage = "POST"
+    else:
+        stage = None
+
+    well_position = imgFile_split[1].split('-')
+    well = well_position[0]
+    try:
+        position = well_position[1]
+    except:
+        print(f"Error parsing: {imgFile}")
+        position = None  
+
+    return [stage, well, position]
+
 with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
 
     for file in files:
+
         path = file['path'] 
         imgFile = file['name']
+        print(f"Processing: {path}\\{imgFile}")
 
         # parse file names
-        try:
-            imgFile_split = imgFile.split('_')
-            if(imgFile_split[0].upper().find('PRE')>0):
-                stage = "PRE"
-            elif(imgFile_split[0].upper().find('POST')>0):
-                stage = "POST"
-            else:
-                stage = "NONE"
-
-            well_position = imgFile_split[1].split('-')
-            well = well_position[0]
-            position = well_position[1]
-
-        except:
-            print(f"Error parsing: {imgFile}")
-            stage = None
-            well = None
-            position = None
+        stage, well, position = parseFileName(imgFile)
 
         try:
             sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, scalefactor=1, debug=debug, gamma=gamma)

@@ -11,7 +11,7 @@ class Settings:
         # Define folders for input of data
         self.folder_dicts = [
             {
-                # name: foldername        
+                # name: folder 0       
                 'name': 'Test',
                 # root: path to folder
                 'root': 'C:\\Users\\fjs21\\OneDrive\\Research&Lab\\Data\\Transwell Experiments 2020',
@@ -27,7 +27,7 @@ class Settings:
                 'marker_index' : None
             },
             {
-                # name: foldername        
+                # name: folder 1        
                 'name': 'Roopa September 2020 BK experiment',
                 # root: path to folder
                 'root': 'C:\\scratch\\sep 2020 sample',
@@ -43,7 +43,7 @@ class Settings:
                 'marker_index' : None
             },        
             {
-                # name: foldername        
+                # name: folder 2        
                 'name': 'Jackie Transwell and IGFBP2 experiment',
                 # root: path to folder
                 'root': 'C:\\scratch\\Transwell + IGFBP2 Ab',
@@ -59,7 +59,7 @@ class Settings:
                 'marker_index' : None
             },
             {
-                # name: foldername        
+                # name: folder 3        
                 'name': 'Roopa Feb 2020 BK experiment',
                 # root: path to folder
                 'root': 'Y:\\People\\Roopa\\dk si alpha expts\\feb 2020 sample',
@@ -75,7 +75,7 @@ class Settings:
                 'marker_index' : None
             },  
             {
-                # name: foldername        
+                # name: folder 4        
                 'name': 'Roopa July 31 2020 BK experiment',
                 # root: path to folder
                 'root': 'Y:\\People\\Roopa\\dk si alpha expts\\july 2020',
@@ -89,7 +89,25 @@ class Settings:
                 'EdU_ch': None,
                 # which marker counts the O4 counts
                 'marker_index' : None
-            },          ]             
+            },
+            {
+                # name: folder 5        
+                'name': "Ahmed's transwell experiment",
+                # root: path to folder
+                'root': 'Y:\\People\\Ahmed\\Transwell Experiments\\Exp 3\\Proliferation',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                # which channel is O4?
+                'o4_ch': None,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                # which marker counts the O4 counts
+                'marker_index' : None
+            },
+
+                      ]             
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50

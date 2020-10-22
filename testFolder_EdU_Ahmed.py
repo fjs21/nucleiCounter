@@ -16,25 +16,12 @@ from commonFunctions import *
 
 settings = Settings()
 
-# manual settings
-# folder = 1
-# debug = False
-# thres = 'th2'
-# gamma = 0.5
-# model = loadKerasModel(settings.kerasModel)
-
-# IGBFP2 experiment
-folder = 2
-debug = False
-thres = 'th2'
-gamma = 1.0
-
 # Ahmed's n = 3 of the transwell experiments
 # images severly over saturated
-# folder = 5
-# debug = True
-# thres = 'th2'
-# gamma = 3
+folder = 5
+debug = False
+thres = 'th2'
+gamma = 4
 
 # retrieve settings using 'folder'
 root = settings.folder_dicts[folder]['root']
@@ -102,34 +89,54 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
             if (EdU_ch is not None):
                 # Count EdU channel
                 EdU = sCI.proccessNuclearImage(sCI.images[sCI.EdU_ch], gamma=gamma)
-                sCI.threshold_method = thres
+                sCI.threshold_method = 'th1'
                 sCI.imageThreshold(EdU, debug=debug)
             
+                # kernel = np.ones((3,3),np.uint8)
+                # print(kernel)
+                # kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(7,7))
+                # print(kernel)
+                # sCI.thresh = cv.morphologyEx(sCI.thresh,cv.MORPH_CLOSE,kernel, iterations=3)
+
                 EdU_count, EdU_output, EdU_mask, EdU_watershed = sCI.thresholdSegmentation(EdU_ch, debug=debug)
                 EdU_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, EdU_mask)
                 ret,EdU_DAPI_markers = cv.connectedComponents(EdU_DAPI_overlap)
                 EdU_count2 = EdU_DAPI_markers.max() # count does not use watershed step
+
+                EdU_centroid_x = EdU_output[3][1:,0].astype(int)
+                EdU_centroid_y = EdU_output[3][1:,1].astype(int)
+
+                """ Generate a summary PDF to quickly review DAPI and EdU counts. """
+                plt.figure(figsize= (20,10))
+                plt.suptitle(f"{path}\\{imgFile}")
+                plt.subplot(1,2,1), plt.imshow(sCI.nucleiWatershed)
+                plt.subplot(1,2,2), plt.imshow(EdU_watershed)
+                plt.subplot(1,2,2), plt.scatter(sCI.centroid_x,sCI.centroid_y,s=0.5)
+                plt.subplot(1,2,2), plt.scatter(EdU_centroid_x,EdU_centroid_y,c="yellow",s=0.5)
+                export_pdf.savefig(dpi=300)
+                plt.close()
+
             else:
                 EdU_count = None
             
             """ mCherry count. """
-            mCherry = sCI.proccessNuclearImage(sCI.images[2], gamma=True)
-            sCI.threshold_method = thres
-            sCI.imageThreshold(mCherry, debug=debug)
-            mCherry_count, mCherry_output, mCherry_mask, mCherry_watershed = sCI.thresholdSegmentation(2, debug=debug)
+            # mCherry = sCI.proccessNuclearImage(sCI.images[2], gamma=True)
+            # sCI.threshold_method = thres
+            # sCI.imageThreshold(mCherry, debug=debug)
+            # mCherry_count, mCherry_output, mCherry_mask = sCI.thresholdSegmentation(2, debug=debug)
 
-            # plt.subplot(1,3,1),plt.imshow(sCI.nucleiMask)
-            # plt.subplot(1,3,2),plt.imshow(mCherry_mask)
+            # # plt.subplot(1,3,1),plt.imshow(sCI.nucleiMask)
+            # # plt.subplot(1,3,2),plt.imshow(mCherry_mask)
             
-            mCherry_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, mCherry_mask)
-            ret,mCherry_DAPI_markers = cv.connectedComponents(mCherry_DAPI_overlap)
-            # print(f"Number of mCherry+ cells: {markers.max()}")
+            # mCherry_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, mCherry_mask)
+            # ret,mCherry_DAPI_markers = cv.connectedComponents(mCherry_DAPI_overlap)
+            # # print(f"Number of mCherry+ cells: {markers.max()}")
 
-            mCherry_EdU_overlap = cv.bitwise_and(EdU_DAPI_overlap, mCherry_mask)
-            ret,mCherry_EdU_markers = cv.connectedComponents(mCherry_EdU_overlap)
+            # mCherry_EdU_overlap = cv.bitwise_and(EdU_DAPI_overlap, mCherry_mask)
+            # ret,mCherry_EdU_markers = cv.connectedComponents(mCherry_EdU_overlap)
             
-            # plt.subplot(1,3,3),plt.imshow(overlap)
-            # plt.show()
+            # # plt.subplot(1,3,3),plt.imshow(overlap)
+            # # plt.show()
 
             if "model" in locals():
                 sCI.processCells()
@@ -147,8 +154,8 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
                     'o4neg_count': sCI.o4neg_count,
                     'o4%': "{:.2%}".format(sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)),
                     'EdU_count': EdU_count,
-                    'mCherry_count': mCherry_DAPI_markers.max(),
-                    'mCherryEdU_count': mCherry_EdU_markers.max(),
+                    # 'mCherry_count': mCherry_DAPI_markers.max(),
+                    # 'mCherryEdU_count': mCherry_EdU_markers.max(),
                     })
 
             else:            
@@ -160,8 +167,8 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
                     'position': position,
                     'nucleiCount': sCI.nucleiCount,
                     'EdU_count': EdU_count,
-                    'mCherry_count': mCherry_DAPI_markers.max(),
-                    'mCherryEdU_count': mCherry_EdU_markers.max(),
+                    # 'mCherry_count': mCherry_DAPI_markers.max(),
+                    # 'mCherryEdU_count': mCherry_EdU_markers.max(),
                     'EdU_count2': EdU_count2,
                     })
         except:
