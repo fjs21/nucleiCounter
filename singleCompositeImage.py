@@ -57,11 +57,11 @@ class singleCompositeImage():
         if (gamma == -1):
             gamma = self.gamma
 
-        self.nuclei_img = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
+        self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
         self.threshold_method = threshold_method
-        self.imageThreshold(self.nuclei_img, debug)
+        self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, debug)
         
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed = self.thresholdSegmentation(self.dapi_ch, debug)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(self.nucleiThresh, self.nucleiImg, debug)
         self.centroids = self.output[3][1:,]
         self.centroid_x = self.centroids[:,0].astype(int)
         self.centroid_y = self.centroids[:,1].astype(int)
@@ -162,8 +162,8 @@ class singleCompositeImage():
 
         if gamma != 1:
             if debug:
-                self.plotHistogram(img)
-            img = self.gammaCorrect(img)
+                self.plotHistogram(img, gamma)
+            img = self.gammaCorrect(img, gamma)
 
         # normalize (stretch histogram and convert to 8-bit)
         img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
@@ -175,7 +175,7 @@ class singleCompositeImage():
 
         return img
 
-    def imageThreshold(self, img, debug=False):
+    def imageThreshold(self, img, threshold_method, debug=False):
         """IMAGE THRESHOLDING."""
         # based on - https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
 
@@ -194,14 +194,14 @@ class singleCompositeImage():
         if self.debug or debug:
             self.showImages(images, titles)
 
-        self.thresh = cv.bitwise_not(eval(self.threshold_method))
+        return cv.bitwise_not(eval(threshold_method))
 
-    def thresholdSegmentation(self, channel, debug=False):
+    def thresholdSegmentation(self, thresh, img, debug=False):
         """SEGMENTATION and WATERSHED"""
         # based on - https://docs.opencv.org/3.4/d3/db4/tutorial_py_watershed.html
         # 1. noise removal
         kernel = np.ones((3,3),np.uint8)
-        opening = cv.morphologyEx(self.thresh,cv.MORPH_OPEN,kernel, iterations=3)
+        opening = cv.morphologyEx(thresh,cv.MORPH_OPEN,kernel, iterations=3)
 
         # 2. sure background area
         sure_bg = cv.dilate(opening,kernel,iterations=3)
@@ -228,7 +228,7 @@ class singleCompositeImage():
         # Now, mark the region of unknown with zero
         markers[unknown==255] = 0
 
-        img = self.proccessNuclearImage(self.images[channel])
+        # img = self.proccessNuclearImage(self.images[channel])
         img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         markers = cv.watershed(img,markers)
@@ -236,7 +236,7 @@ class singleCompositeImage():
         img[markers == -1] = [255,0,0]
 
         titles = ['threshold', 'opening', 'dist_transform', 'sure_fg', 'unknown', 'watershed']
-        images = [self.thresh, opening, dist_transform, sure_fg, unknown, img]
+        images = [thresh, opening, dist_transform, sure_fg, unknown, img]
 
         if self.debug or debug:
             self.showImages(images,titles)
@@ -244,7 +244,7 @@ class singleCompositeImage():
         count = markers.max()-1
         output = cv.connectedComponentsWithStats(sure_fg)
 
-        return([count, output, sure_fg, img])
+        return([count, output, sure_fg, img, markers])
 
     # other functions of potential interest - findContours
     # NEXT FILTER ON SIZE, CIRCULARITY - GET X-Y centroid
@@ -256,8 +256,12 @@ class singleCompositeImage():
         plt.subplot(1,2,2),plt.scatter(centroid_x,-centroid_y)
         plt.show()
 
-    def colorImage(self, blue, green='', red='', gamma: float = 1.0):
+    def colorImage(self, blue, green='', red='', gamma: float = -1):
         """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
+
+        if gamma == -1:
+            gamma = self.gamma
+
         if isinstance(red, np.ndarray):
             red = cv.normalize(src=red, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
@@ -271,9 +275,12 @@ class singleCompositeImage():
         else:
             green = np.zeros(blue.shape, dtype=np.uint8)
         
+        if gamma != 1.0:
+                blue = self.gammaCorrect(blue)
         blue = cv.normalize(src=blue, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         
         rgb = cv.merge((blue, green, red))
+
         return rgb
 
     def getCell(self, rgb, centroid):
@@ -453,7 +460,7 @@ class singleCompositeImage():
         else:
             return 0
 
-    def processPredictions(self, export_pdf, debug: bool=False):
+    def processPredictions(self, export_pdf, prediction_cutoff = 0.5, debug: bool=False):
         from matplotlib.patches import Rectangle
 
         # bar width on plots to indicate which cells will not be counted
@@ -467,7 +474,7 @@ class singleCompositeImage():
         for i in range(len(self.cells)):
             if not isinstance(self.cells[i], int):
                 # total_cellImages += 1
-                cell_type = self.classifyCell(i)
+                cell_type = self.classifyCell(i, prediction_cutoff)
                 if cell_type == 1:
                     title='O4+'
                     self.o4pos_count += 1
@@ -483,7 +490,7 @@ class singleCompositeImage():
         plt.figure(figsize= (10,10))
         plt.imshow(self.rgb)
         plt.title(os.path.join(self.path,self.imgFile)[-80:])
-        plt.scatter(cell_info[:,0],cell_info[:,1],c=cell_info[:,2],s=2)
+        plt.scatter(cell_info[:,0],cell_info[:,1],c=cell_info[:,2],s=0.2)
         # if marker_index != 0:
         #     if pattern == '*MMStack.ome*.tif':
         #         markerFile = findNewestMarkerFile(self.path)
@@ -500,17 +507,21 @@ class singleCompositeImage():
         export_pdf.savefig()
         plt.close()
 
-    def gammaCorrect(self, image):
+    def gammaCorrect(self, image, gamma: float=-1):
         """Gamma correct."""
+        if gamma == -1:
+            gamma = self.gamma
         max_pixel = np.max(image)
         corrected_image = image
         corrected_image = (corrected_image / max_pixel) 
-        corrected_image = np.power(corrected_image, self.gamma)
+        corrected_image = np.power(corrected_image, gamma)
         corrected_image = corrected_image * max_pixel
         return corrected_image
 
-    def plotHistogram(self, image):
+    def plotHistogram(self, image, gamma: float=-1):
         """Plot a histogram of an image."""
+        if gamma == -1:
+            gamma = self.gamma
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
 
@@ -522,7 +533,7 @@ class singleCompositeImage():
         plt.xlim([0, 255])
         plt.yscale('log')
 
-        img_g = self.gammaCorrect(image)
+        img_g = self.gammaCorrect(image, gamma)
         img_g = cv.normalize(src=img_g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         plt.subplot(2,2,3),plt.imshow(img_g)
         plt.title('Gamma Corrected Image')
