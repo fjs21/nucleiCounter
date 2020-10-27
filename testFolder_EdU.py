@@ -184,6 +184,14 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
 import csv
 filename = 'results_folder_' + str(folder) + '.csv'
 with open(filename,'w',newline='') as f:
+    # report analysis settings
+    w = csv.writer(f)
+    w.writerow([
+        'gamma', gamma,
+        'thres', thres,
+        ])
+    w.writerow('')
+    # results
     w = csv.DictWriter(f, results[0].keys())
     w.writeheader()
     w.writerows(results)

@@ -2,9 +2,6 @@ import random
 import numpy as np 
 from matplotlib.backends.backend_pdf import PdfPages
 
-from matplotlib import pyplot as plt
-import cv2 as cv
-
 # start JVM for compatibility with VSI files
 import javabridge
 import bioformats
@@ -16,23 +13,10 @@ from commonFunctions import *
 
 settings = Settings()
 
-# manual settings
-# folder = 1
-# debug = False
-# thres = 'th2'
-# gamma = 0.5
-# model = loadKerasModel(settings.kerasModel)
-
-# IGBFP2 experiment
-# folder = 2
-# debug = False
-# thres = 'th2'
-# gamma = 1
-
-folder = 4 # 3 
+# BK siRNA experiments
+folder = 6 # July 31, 2019 # 4 (July 2020, Discard) # 3 (Feb 2020) # 1 (Sept 2020) 
 debug = False
-thres = 'th2'
-gamma = 1
+
 model = loadKerasModel(settings.kerasModel)
 
 # retrieve settings using 'folder'
@@ -42,6 +26,10 @@ files = find(pattern, root)
 dapi_ch = settings.folder_dicts[folder]['dapi_ch']
 o4_ch = settings.folder_dicts[folder]['o4_ch']
 marker_index = settings.folder_dicts[folder]['marker_index']
+
+gamma = settings.folder_dicts[folder]['gamma']
+thres = settings.folder_dicts[folder]['thres']
+o4_cutoff = 0.5 # default was 0.5
 
 # start analysis
 print(f"Found {len(files)} matching '{pattern}' in '{root}'")
@@ -93,14 +81,14 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
 
         try:
             sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, scalefactor=1, debug=debug, gamma=gamma)
-            sCI.processDAPI(threshold_method=thres, gamma=gamma) # based on manual counts (see OneNote)
+            sCI.processDAPI(threshold_method=thres, gamma=gamma, debug=debug) # based on manual counts (see OneNote)
             if debug:
                 sCI.reportResults()
 
             if "model" in locals():
                 sCI.processCells()
                 sCI.getPredictions(model)
-                sCI.processPredictions(export_pdf, debug=False)
+                sCI.processPredictions(export_pdf, prediction_cutoff = o4_cutoff, debug=False)
 
                 results.append({
                     'path': sCI.path,
@@ -131,6 +119,14 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
 import csv
 filename = 'results_folder_' + str(folder) + '.csv'
 with open(filename,'w',newline='') as f:
+    # report analysis settings
+    w = csv.writer(f)
+    w.writerow([
+        'gamma', gamma,
+        'thres', thres,
+        ])
+    w.writerow('')
+    # results
     w = csv.DictWriter(f, results[0].keys())
     w.writeheader()
     w.writerows(results)
