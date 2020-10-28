@@ -236,6 +236,7 @@ class analyzeGFP():
 
         # nucleiCircles = list(self.nucleiCircles[i] for i in random.sample(list(range(len(self.nucleiCircles))),50))
 
+        """ Using nucleiCircles determine how many pixels overlapping with each nucleus are GFP+ """
         img = GFP
         self.GFPcount = 0
         GFPpercentages = []
@@ -257,7 +258,7 @@ class analyzeGFP():
                             GFPcount += 1
                             # plt.scatter(pt[0],pt[1],c="purple",s=0.2)
                         # else:
-                        #     plt.scatter(pt[0],pt[1],c="tan",s=0.2)
+                            # plt.scatter(pt[0],pt[1],c="tan",s=0.2)
             
             # print(f"nucleusSize: {nucleusSize}. GFPcount: {GFPcount}. %GFP =  {'{:.2%}'.format(GFPcount/nucleusSize*100)}")
             GFPpercentage = (GFPcount/nucleusSize)
