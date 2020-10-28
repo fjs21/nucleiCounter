@@ -131,26 +131,31 @@ class singleCompositeImage():
         print(self.images[0].shape)
 
     def showImages(self, images, titles='', suptitle=''):
-        mng = plt.get_current_fig_manager()
-        mng.full_screen_toggle()
+        # mng = plt.get_current_fig_manager()
+        # mng.full_screen_toggle()
 
         # doesn't show both only most recent...
         #plt.suptitle(suptitle)
-        plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
-
+        # 
         cols = int(len(images) // 2 + len(images) % 2)
         rows = int(len(images) // cols + len(images) % cols)
         #plt.figure(figsize = (rows,cols))
         # print("cells/rows",cols,rows)
-        for i in range(len(images)):
-            img = images[i]
-            img = self.gammaCorrect(img)
-            img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-            plt.subplot(rows,cols,i+1),plt.imshow(img,'gray')
-            if titles != '':
-                plt.title(titles[i])
-            plt.xticks([]),plt.yticks([])
+        fig, axes = plt.subplots(rows,cols, sharex=True, sharey=True)
+        # for i in range(len(images)):
+        for i, ax in enumerate(axes.flat):
+            if i < len(images):
+                img = images[i]
+                img = self.gammaCorrect(img)
+                img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+                ax.imshow(img,'gray')
+                if titles != '':
+                    ax.set_title(titles[i])
+                # plt.xticks([]),plt.yticks([])
+            else:
+                fig.delaxes(ax)
         plt.tight_layout()
+        plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
         plt.show()
 
     def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):
@@ -196,15 +201,22 @@ class singleCompositeImage():
 
         return cv.bitwise_not(eval(threshold_method))
 
-    def thresholdSegmentation(self, thresh, img, debug=False):
+    def thresholdSegmentation(self, 
+        thresh, 
+        img, 
+        opening_kernel = np.ones((3,3),np.uint8),
+        opening_iterations = 3, 
+        background_kernel = np.ones((3,3),np.uint8),
+        background_iterations = 3,
+        debug=False):
         """SEGMENTATION and WATERSHED"""
         # based on - https://docs.opencv.org/3.4/d3/db4/tutorial_py_watershed.html
         # 1. noise removal
-        kernel = np.ones((3,3),np.uint8)
-        opening = cv.morphologyEx(thresh,cv.MORPH_OPEN,kernel, iterations=3)
+        # kernel = np.ones((3,3),np.uint8)
+        opening = cv.morphologyEx(thresh, cv.MORPH_OPEN, opening_kernel, iterations= opening_iterations)
 
         # 2. sure background area
-        sure_bg = cv.dilate(opening,kernel,iterations=3)
+        sure_bg = cv.dilate(opening, background_kernel, iterations= background_iterations)
 
         # 3. Finding sure foreground area
         dist_transform = cv.distanceTransform(opening,cv.DIST_L2,5) # calculates distance from boundary
@@ -270,13 +282,13 @@ class singleCompositeImage():
         if isinstance(green, np.ndarray):
             # add gama correction to O4 channel
             if gamma != 1.0:
-                green = self.gammaCorrect(green)
+                green = self.gammaCorrect(green, gamma = gamma)
             green = cv.normalize(src=green, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
             green = np.zeros(blue.shape, dtype=np.uint8)
         
         if gamma != 1.0:
-                blue = self.gammaCorrect(blue)
+                blue = self.gammaCorrect(blue, gamma = gamma)
         blue = cv.normalize(src=blue, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         
         rgb = cv.merge((blue, green, red))
