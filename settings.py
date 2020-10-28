@@ -157,7 +157,46 @@ class Settings:
                 'gamma': 1,
                 'thres': 'th2',
             },
-        ]             
+            {
+                # name: folder 8       
+                'name': "Migration Assay (plate 1) - DAPI/GFP/A594 transwell images",
+                # root: path to folder
+                #'root': 'C:\\scratch\\Migration(1)',
+                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                # which channel is O4?
+                'o4_ch': None,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set gamma
+                'gamma': 1,
+                'thres': 'th2',
+            },
+            {
+                # name: folder 9       
+                'name': "Migration Assay (plate 2) - DAPI/GFP/A594 transwell images",
+                # root: path to folder
+                #'root': 'C:\\scratch\\Migration(1)',
+                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                # which channel is O4?
+                'o4_ch': None,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set gamma
+                'gamma': 1,
+                'thres': 'th2',
+            },        ]             
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
