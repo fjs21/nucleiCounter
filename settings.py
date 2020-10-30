@@ -142,7 +142,7 @@ class Settings:
                 'name': "Test of DAPI/GFP transwell images",
                 # root: path to folder
                 # 'root': 'C:\\scratch\\Migration Assays',
-                'root': 'Y:\\People\\Jackie\\Migration Assays',
+                'root': 'C:\\Users\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1) no A594',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
@@ -159,9 +159,8 @@ class Settings:
             },
             {
                 # name: folder 8       
-                'name': "Migration Assay (plate 1) - DAPI/GFP/A594 transwell images",
+                'name': "Migration Assay (Experiment 1) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                #'root': 'C:\\scratch\\Migration(1)',
                 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1)',
                 # pattern: define file
                 'pattern': '*.vsi',
@@ -179,10 +178,10 @@ class Settings:
             },
             {
                 # name: folder 9       
-                'name': "Migration Assay (plate 2) - DAPI/GFP/A594 transwell images",
+                'name': "Migration Assay (Experiment 2) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                #'root': 'C:\\scratch\\Migration(1)',
                 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
+                # 'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
@@ -196,7 +195,8 @@ class Settings:
                 # set gamma
                 'gamma': 1,
                 'thres': 'th2',
-            },        ]             
+            },                     
+        ]
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50

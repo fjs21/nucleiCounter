@@ -127,7 +127,7 @@ class analyzeTranswell():
         red_blur = cv.GaussianBlur(red,(5,5),0)
 
         th = cv.adaptiveThreshold(red_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
-            cv.THRESH_BINARY,23,2)     
+            cv.THRESH_BINARY,23,2.5)     
         red_thresh = cv.bitwise_not(th)
 
         self.autoFL = red_thresh
@@ -156,9 +156,7 @@ class analyzeTranswell():
         dapi_only = cv.bitwise_not(dapi_only)
         kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
         dapi_close = cv.morphologyEx(dapi_only, cv.MORPH_CLOSE, kernel)
-        if self.debug:
-            sCI.showImages([dapi_only, dapi_close],['dapi_only','dapi_close'])
-    
+            
         """ ERODE threshold image to remove noise. """
         # tM.tryErosion(dapi_close) 
         kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3,3))
@@ -173,15 +171,15 @@ class analyzeTranswell():
         # https://stackoverflow.com/questions/50882663/find-contours-after-watershed-opencv
         m1 = self.nucleiMarkers.astype(np.uint8)
         ret, m2 = cv.threshold(m1, 0, 255, cv.THRESH_BINARY|cv.THRESH_OTSU)
-        if self.debug:
-            cv.imshow('DAPI watershed-based threshold',m2)
-            cv.waitKey()
-            cv.destroyAllWindows()
+        # if self.debug:
+        #     cv.imshow('DAPI watershed-based threshold',m2)
+        #     cv.waitKey()
+        #     cv.destroyAllWindows()
 
         """ Calculate contours from nuclei and filter based on size and circularity. """
         # from https://stackoverflow.com/questions/42203898/python-opencv-blob-detection-or-circle-detection
         contours, hierarchy = cv.findContours(m2, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        contours_area = self.getContoursArea(contours)
+        contours_area = self.getContoursArea(contours, min = 40)
         contours_circles = self.getContoursCircles(contours_area)
 
         print(f"Final nuclei count: {len(contours_circles)}")
@@ -298,7 +296,7 @@ class analyzeTranswell():
 
         """ Show diagnostic plot if debug is set. """
         if self.debug:
-            plt.show(fig)
+            plt.show()
         else:
             plt.close(fig)
 
@@ -370,6 +368,7 @@ class analyzeTranswell():
                 except:
                     print(f"Failed on path '{self.path}'. Image: {self.imgFile}")
                     raise
+            print("Finished processing files and writing PDF to disk.")
 
     def exportResults(self):
         # output results as csv
@@ -392,12 +391,12 @@ class analyzeTranswell():
 javabridge.start_vm(class_path=bioformats.JARS)        
 
 # JW Transwell
-a = analyzeTranswell(folder = 8, debug = False)
-# a = analyzeTranswell(folder = 9, debug = False)
+# a = analyzeTranswell(folder = 8, debug = False)
+a = analyzeTranswell(folder = 9, debug = False)
 
 # newfiles = []
 # for file in a.files:
-#     if file['name'] == 'Migration assay(1)_NCKD_pre scrape + 594_A1-3_9402.vsi':
+#     if file['name'] == 'Migration assay(1)_NCKD_pre scrape + 594_D2-3_9478.vsi':
 #         newfiles.append(file)
 # a.files = newfiles
 # print(a.files)
