@@ -61,7 +61,7 @@ class singleCompositeImage():
         self.threshold_method = threshold_method
         self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, debug)
         
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(self.nucleiThresh, self.nucleiImg, debug)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(self.nucleiThresh, self.nucleiImg, debug = debug)
         self.centroids = self.output[3][1:,]
         self.centroid_x = self.centroids[:,0].astype(int)
         self.centroid_y = self.centroids[:,1].astype(int)

@@ -134,7 +134,7 @@ class Settings:
                 # which marker counts the O4 counts
                 'marker_index' : None,
                 # set gamma
-                'gamma': 0.5,
+                'gamma': 0.3,
                 'thres': 'th2',
             },
             {
