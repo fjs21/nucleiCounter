@@ -24,12 +24,12 @@ root = settings.folder_dicts[folder]['root']
 pattern = settings.folder_dicts[folder]['pattern']
 files = find(pattern, root)
 dapi_ch = settings.folder_dicts[folder]['dapi_ch']
+dapi_gamma = settings.folder_dicts[folder]['dapi_gamma']
 o4_ch = settings.folder_dicts[folder]['o4_ch']
+o4_gamma = settings.folder_dicts[folder]['o4_gamma']
 marker_index = settings.folder_dicts[folder]['marker_index']
 
-gamma = settings.folder_dicts[folder]['gamma']
 thres = settings.folder_dicts[folder]['thres']
-o4_cutoff = 0.5 # default was 0.5
 
 # start analysis
 print(f"Found {len(files)} matching '{pattern}' in '{root}'")
@@ -80,15 +80,15 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
         stage, well, position = parseFileName(imgFile)
 
         try:
-            sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, scalefactor=1, debug=debug, gamma=gamma)
-            sCI.processDAPI(threshold_method=thres, gamma=gamma, debug=debug) # based on manual counts (see OneNote)
+            sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, scalefactor=1, debug=debug, dapi_gamma=dapi_gamma, o4_gamma=o4_gamma)
+            sCI.processDAPI(threshold_method=thres, debug=debug) # based on manual counts (see OneNote)
             if debug:
                 sCI.reportResults()
 
             if "model" in locals():
                 sCI.processCells()
                 sCI.getPredictions(model)
-                sCI.processPredictions(export_pdf, prediction_cutoff = o4_cutoff, debug=False)
+                sCI.processPredictions(export_pdf)
 
                 results.append({
                     'path': sCI.path,
@@ -122,7 +122,8 @@ with open(filename,'w',newline='') as f:
     # report analysis settings
     w = csv.writer(f)
     w.writerow([
-        'gamma', gamma,
+        'dapi_gamma', dapi_gamma,
+        'o4_gamma', o4_gamma,
         'thres', thres,
         ])
     w.writerow('')

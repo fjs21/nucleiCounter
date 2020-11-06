@@ -17,8 +17,8 @@ class singleCompositeImage():
     def __init__(self: str, path: str, imgFile: str, dapi_ch: int, o4_ch: int=None, EdU_ch: int=None,
         # to take into account different magnifications across images and training set
         scalefactor: float = 1, 
-        # gamma correct (0.5)
-        gamma: float = 1.0, 
+        dapi_gamma: float = 1.0, 
+        o4_gamma: float = 1.0,
         debug: bool = False):
         
         self.debug = debug
@@ -30,8 +30,10 @@ class singleCompositeImage():
         self.o4_ch = o4_ch
         self.EdU_ch = EdU_ch
         
+        self.dapi_gamma = dapi_gamma
+        self.o4_gamma = o4_gamma
+
         self.scalefactor = scalefactor
-        self.gamma = gamma
         self.debug = debug
 
         self.settings = Settings()
@@ -44,18 +46,18 @@ class singleCompositeImage():
         # get color image for export
         if(self.o4_ch is None):
             if(self.EdU_ch is not None):
-                self.rgb = self.colorImage(blue=self.images[self.dapi_ch], red=self.images[self.EdU_ch], gamma=self.gamma)
+                self.rgb = self.colorImage(blue=self.images[self.dapi_ch], red=self.images[self.EdU_ch])
             else:
-                self.rgb = self.colorImage(blue=self.images[self.dapi_ch], gamma=self.gamma)
+                self.rgb = self.colorImage(blue=self.images[self.dapi_ch])
         elif(self.o4_ch is not None):
-            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch], gamma=self.gamma)
+            self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch])
 
     def processDAPI(self, threshold_method: str, gamma: float = -1, debug: bool=False):
         """ Process DAPI channel. """
 
         # if DAPI gamma not set, use global gamma setting
         if (gamma == -1):
-            gamma = self.gamma
+            gamma = self.dapi_gamma
 
         self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
         self.threshold_method = threshold_method
@@ -146,7 +148,7 @@ class singleCompositeImage():
         for i, ax in enumerate(axes.flat):
             if i < len(images):
                 img = images[i]
-                img = self.gammaCorrect(img)
+                # img = self.gammaCorrect(img)
                 img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
                 ax.imshow(img,'gray')
                 if titles != '':
@@ -271,24 +273,30 @@ class singleCompositeImage():
     def colorImage(self, blue, green='', red='', gamma: float = -1):
         """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
 
-        if gamma == -1:
-            gamma = self.gamma
-
+        # Red channel     
+        if gamma != 1.0:
+            red = self.gammaCorrect(red, gamma = gamma)
         if isinstance(red, np.ndarray):
             red = cv.normalize(src=red, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
             red = np.zeros(blue.shape, dtype=np.uint8)
 
+        # Green channel
         if isinstance(green, np.ndarray):
             # add gama correction to O4 channel
-            if gamma != 1.0:
+            if gamma == -1:
+                green = self.gammaCorrect(green, gamma = self.o4_gamma)
+            elif gamma != 1:
                 green = self.gammaCorrect(green, gamma = gamma)
             green = cv.normalize(src=green, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
             green = np.zeros(blue.shape, dtype=np.uint8)
         
-        if gamma != 1.0:
-                blue = self.gammaCorrect(blue, gamma = gamma)
+        # Blue channel
+        if gamma == -1:
+            blue = self.gammaCorrect(blue, gamma = self.dapi_gamma)
+        elif gamma != 1:
+            blue = self.gammaCorrect(blue, gamma = gamma)
         blue = cv.normalize(src=blue, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         
         rgb = cv.merge((blue, green, red))
@@ -522,7 +530,7 @@ class singleCompositeImage():
     def gammaCorrect(self, image, gamma: float=-1):
         """Gamma correct."""
         if gamma == -1:
-            gamma = self.gamma
+            return image
         max_pixel = np.max(image)
         corrected_image = image
         corrected_image = (corrected_image / max_pixel) 

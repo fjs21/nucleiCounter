@@ -127,14 +127,15 @@ class Settings:
                 'pattern': '*.vsi',
                 # which channel is DAPI?
                 'dapi_ch': 1,
+                'dapi_gamma': 0.5,
                 # which channel is O4?
                 'o4_ch': 2,
+                'o4_gamma': 0.2,
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
                 'marker_index' : None,
-                # set gamma
-                'gamma': 0.3,
+                # set threshold                
                 'thres': 'th2',
             },
             {

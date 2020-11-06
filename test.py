@@ -30,19 +30,29 @@ settings = Settings()
 # thres = "th2"
 # model = loadKerasModel(settings.kerasModel)
 
-path = 'Y:\\People\\Ahmed\\Transwell Experiments\\Exp 3\\Proliferation\\Alone'
-imgFile = 'Transwell 3_Multichannel_20190603_2939.vsi'
-dapi_ch = 0
-o4_ch = None
-EdU_ch = 1
-gamma = 3
+# path = 'Y:\\People\\Ahmed\\Transwell Experiments\\Exp 3\\Proliferation\\Alone'
+# imgFile = 'Transwell 3_Multichannel_20190603_2939.vsi'
+# dapi_ch = 0
+# o4_ch = None
+# EdU_ch = 1
+# gamma = 3
+# thres = 'th2'
+
+path = 'Y:\\People\\Roopa\\dk si alpha expts\\siBK 0731 sample\\NC\\oxo'
+imgFile = 'siBK 07312019_C2-11_7321.vsi'
+dapi_ch = 1
+o4_ch = 2
+EdU_ch = None
+dapi_gamma = 0.5
+o4_gamma = 0.2
 thres = 'th2'
+model = loadKerasModel(settings.kerasModel)
 
 # marker_index = 5
 width = height = 128
 
-sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, EdU_ch=EdU_ch, scalefactor=1, debug=False, gamma=gamma)
-sCI.processDAPI(threshold_method=thres, gamma=gamma)
+sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, EdU_ch=EdU_ch, scalefactor=1, debug=True, dapi_gamma = dapi_gamma, o4_gamma = o4_gamma)
+sCI.processDAPI(threshold_method=thres)
 sCI.processCells()
 # sCI.processMarkers(markerFile, marker_index, debug=True)
 # print(sCI.centroids_classification[3])
