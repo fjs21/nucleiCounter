@@ -274,9 +274,10 @@ class singleCompositeImage():
         """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
 
         # Red channel     
-        if gamma != 1.0:
-            red = self.gammaCorrect(red, gamma = gamma)
         if isinstance(red, np.ndarray):
+            # add gamma correction to red channel    
+            if gamma != -1:
+                red = self.gammaCorrect(red, gamma = gamma)
             red = cv.normalize(src=red, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         else:
             red = np.zeros(blue.shape, dtype=np.uint8)
@@ -542,27 +543,32 @@ class singleCompositeImage():
         """Plot a histogram of an image."""
         if gamma == -1:
             gamma = self.gamma
-        mng = plt.get_current_fig_manager()
-        mng.full_screen_toggle()
+
+        fig = plt.figure()
 
         img = cv.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-        plt.subplot(2,2,1),plt.imshow(img)
-        plt.title('Original Image')
+        ax1 = fig.add_subplot(2,2,1)
+        ax1.imshow(img)
+        ax1.set_title('Original Image')
+
         hist = cv.calcHist(img,[0],None,[255],[0,255])
-        plt.subplot(2,2,2),plt.plot(hist, color='k')
-        plt.xlim([0, 255])
-        plt.yscale('log')
+        ax2 = fig.add_subplot(2,2,2)
+        ax2.plot(hist, color='k')
+        ax2.set_xlim([0, 255])
+        ax2.set_yscale('log')
 
         img_g = self.gammaCorrect(image, gamma)
         img_g = cv.normalize(src=img_g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-        plt.subplot(2,2,3),plt.imshow(img_g)
-        plt.title('Gamma Corrected Image')
+        ax3 = fig.add_subplot(2,2,3, sharex=ax1, sharey=ax1)
+        ax3.imshow(img_g)
+        ax3.set_title('Gamma Corrected Image')
+
         hist_g = cv.calcHist(img_g,[0],None,[255],[0,255])
-        plt.subplot(2,2,4),plt.plot(hist_g, color='k')       
-        plt.xlim([0, 255])
-        plt.yscale('log')
+        ax4 = fig.add_subplot(2,2,4)
+        ax4.plot(hist_g, color='k')
+        ax4.set_xlim([0, 255])
+        ax4.set_yscale('log')
 
-        plt.suptitle('Gamma Correction')
-
-        plt.tight_layout()
+        fig.suptitle('Gamma Correction')
+        fig.tight_layout()
         plt.show()

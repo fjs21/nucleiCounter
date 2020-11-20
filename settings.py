@@ -162,20 +162,25 @@ class Settings:
                 # name: folder 8       
                 'name': "Migration Assay (Experiment 1) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1)',
+                # 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1)',
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(1)',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
                 'dapi_ch': 0,
+                'dapi_gamma': 1.0,                
                 # which channel is O4?
                 'o4_ch': None,
+                'o4_gamma': 1,                   
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
                 'marker_index' : None,
-                # set gamma
-                'gamma': 1,
+                # set threshold method
                 'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
             },
             {
                 # name: folder 9       
@@ -187,16 +192,90 @@ class Settings:
                 'pattern': '*.vsi',
                 # which channel is DAPI?
                 'dapi_ch': 0,
+                'dapi_gamma': 1.0,
                 # which channel is O4?
                 'o4_ch': None,
+                'o4_gamma': 1,                
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
                 'marker_index' : None,
-                # set gamma
-                'gamma': 1,
+                # set threshold method
                 'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
             },                     
+            {
+                # name: folder 10
+                'name': "Migration Assay (Experiment 3) - DAPI/GFP/A594 transwell images",
+                # root: path to folder
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(3)',
+                # 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(3)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 1.0,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },
+            {
+                # name: folder 11
+                'name': "Migration Assay (Experiment 4) - DAPI/GFP/A594 transwell images",
+                # root: path to folder
+                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(4)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 1.0,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },
+           {
+                # name: folder 12
+                'name': "Migration Assay (Experiment 5) - DAPI/GFP/A594 transwell images",
+                # root: path to folder
+                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(5)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 1.0,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': None,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },            
         ]
 
         # Define distance between centroid and marker cutoff over which cell will not be classified

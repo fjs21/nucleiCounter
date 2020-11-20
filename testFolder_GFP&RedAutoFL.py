@@ -6,6 +6,10 @@ from matplotlib import pyplot as plt
 import cv2 as cv
 
 import math
+from scipy import optimize
+
+# to enable quiting mid-code
+import sys
 
 # start JVM for compatibility with VSI files
 import javabridge
@@ -34,13 +38,16 @@ class analyzeTranswell():
         self.pattern = settings.folder_dicts[folder]['pattern']
         self.files = find(self.pattern, self.root)
         self.dapi_ch = settings.folder_dicts[folder]['dapi_ch']
+        self.dapi_gamma = settings.folder_dicts[folder]['dapi_gamma']
         self.o4_ch = settings.folder_dicts[folder]['o4_ch']
+        self.o4_gamma = settings.folder_dicts[folder]['o4_gamma']
+        self.autoFL_dilate = settings.folder_dicts[folder]['autoFL_dilate']
+        self.autoFL_gamma = settings.folder_dicts[folder]['autoFL_gamma']
         self.marker_index = settings.folder_dicts[folder]['marker_index']
 
         if self.o4_ch is not None:
             self.model = loadKerasModel(settings.kerasModel)
 
-        self.gamma = settings.folder_dicts[folder]['gamma']
         self.thres = settings.folder_dicts[folder]['thres']
         self.o4_cutoff = 0.5 # default was 0.5
 
@@ -119,29 +126,91 @@ class analyzeTranswell():
 
         return(contours_circles)
 
-    def findAutoFluorescenceMask(self, sCI):
+    def optimize_gamma(self, img, target_median: float = 90):
+        """ """
+        img_min    = np.min(img)
+        img_median = np.median(img)
+        img_max    = np.max(img)
+
+        def calc_median(gamma):
+            min_g = np.power(img_min/img_max, gamma) * img_max
+            median_g = np.power(img_median/img_max, gamma) * img_max
+            max_g = img_max
+            return (median_g - min_g)/(max_g - min_g)*256
+
+        def error(gamma):
+            return abs(target_median - calc_median(gamma))
+
+        result = optimize.minimize_scalar(error)
+        print(result)
+        return result.x
+
+    def setMaxPixelInImage(self, img, max):
+        """ Remove top of image but setting max pixel intensity. """
+        
+        img_new = img
+        img_new[img > max] = max
+        
+        return img_new
+
+    def findAutoFluorescenceMask(self, sCI, gamma, dilate: bool=False):
         """ Determine autoFL threshold image for subsequent steps. """
         self.red = sCI.images[2]
 
-        red = sCI.proccessNuclearImage(self.red, gamma=1)
+        # gamma = self.optimize_gamma(self.red)
+        red = self.setMaxPixelInImage(self.red, max = 2 * np.median(self.red))
+        red = sCI.proccessNuclearImage(red, gamma=gamma)
+
+        if self.debug:
+            fig = plt.figure()
+            ax1 = fig.add_subplot(1,3,1)
+            ax1.imshow(red)     
+            ax1.set_title(f"gamma = {gamma}")
+        
+        if self.debug:
+            print(f"autoFL pre-gamma min: {np.min(self.red)}, median: {np.median(self.red)}, max: {np.max(self.red)}")    
+            print(f"autoFL post-gamma min: {np.min(red)}, median: {255-np.median(red)}, max: {np.max(red)}")
+
         red_blur = cv.GaussianBlur(red,(5,5),0)
 
         th = cv.adaptiveThreshold(red_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
             cv.THRESH_BINARY,23,2.5)     
         red_thresh = cv.bitwise_not(th)
+        if self.debug:
+            ax2 = fig.add_subplot(1,3,2, sharex=ax1, sharey=ax1)
+            ax2.imshow(red_thresh)
+            ax2.set_title("threshold: c = 2.5")
 
+        th = cv.adaptiveThreshold(red_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
+            cv.THRESH_BINARY,23,6)     
+        red_thresh = cv.bitwise_not(th)
+        if self.debug:
+            ax3 = fig.add_subplot(1,3,3, sharex=ax1, sharey=ax1)
+            ax3.imshow(red_thresh)
+            ax3.set_title("threshold: c = 6")
+            plt.show()
+
+        if dilate:
+            kernel = cv.getStructuringElement(cv.MORPH_CROSS, (5,5))
+            red_thresh = cv.dilate(red_thresh, kernel)
+        
         self.autoFL = red_thresh
 
     def findNucleiOnTranswell(self, sCI):
         """ Find nuclei using contours and filter on size and circularity."""
         
+        self.dapi = sCI.images[sCI.dapi_ch]
+
+        if self.debug:
+            print(f"dapi pre-gamma min: {np.min(self.dapi)}, median: {np.median(self.dapi)}, max: {np.max(self.dapi)}")  
+
         """ Process DAPI image for thresholding. """
-        dapi = sCI.proccessNuclearImage(sCI.images[sCI.dapi_ch], gamma=self.gamma, debug=self.debug)
+        dapi = sCI.proccessNuclearImage(self.dapi, gamma=self.dapi_gamma, debug=self.debug)
         
         dapi_blur = cv.GaussianBlur(dapi,(5,5),0)
 
         dapi_thresh = cv.adaptiveThreshold(dapi_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
-            cv.THRESH_BINARY,23,2)
+            cv.THRESH_BINARY,23,4)
 
         dapi_only = cv.bitwise_not(cv.bitwise_and(cv.bitwise_not(dapi_thresh), cv.bitwise_not(self.autoFL)))
 
@@ -165,7 +234,7 @@ class analyzeTranswell():
             sCI.showImages([dapi_only, dapi_close, dapi_erode],['dapi_only','dapi_close','dapi_erode'])
 
         """ Calculate number of nuclei using standard approach. """
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = sCI.thresholdSegmentation(dapi_erode, dapi, opening_iterations = 2, background_iterations = 10, debug = False)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = sCI.thresholdSegmentation(dapi_erode, dapi, opening_iterations = 2, background_iterations = 10, debug = self.debug)
 
         """ Use watershed markers to find countours. """
         # https://stackoverflow.com/questions/50882663/find-contours-after-watershed-opencv
@@ -237,8 +306,8 @@ class analyzeTranswell():
         """ Show GFP threshold along with calcuated nuclei and GFP+ cells. """
         overlap = cv.cvtColor(overlap_thresh, cv.COLOR_GRAY2BGR)
         overlap = cv.drawContours(overlap, self.nucleiCircles, -1, (255,0,0), 1)
-        rgb = sCI.colorImage(blue=sCI.images[0],green=sCI.images[1],gamma=0.2)
-        GFP = cv.drawContours(rgb, self.nucleiCircles, -1, (255,0,0), 1)
+        rgb = sCI.colorImage(blue=sCI.images[0],gamma=0.2)
+        GFP = cv.drawContours(rgb, self.nucleiCircles, -1, (255,255,255), 1)
         fig = plt.figure()
         ax1 = fig.add_subplot(2,2,1)
         ax1.imshow(overlap)
@@ -248,7 +317,8 @@ class analyzeTranswell():
         # nucleiCircles = list(self.nucleiCircles[i] for i in random.sample(list(range(len(self.nucleiCircles))),50))
 
         """ Using nucleiCircles determine how many pixels overlapping with each nucleus are GFP+ """
-        img = GFP
+        rgb = sCI.colorImage(blue=sCI.images[0],green=sCI.images[1],gamma=0.2)
+        img = cv.drawContours(rgb, self.nucleiCircles, -1, (255,0,0), 1)
         self.GFPcount = 0
         GFPpercentages = []
         for nuclei in self.nucleiCircles:
@@ -302,7 +372,8 @@ class analyzeTranswell():
 
     def plotResults(self):
         plt.figure(figsize = (10,10))
-        plt.title(f"{self.path}\\{self.imgFile}")
+        # plt.title(f"{self.path}\\{self.imgFile}")
+        plt.title(f"File: {self.imgFile}")
         plt.imshow(self.diagnostic_img)
         self.export_pdf.savefig(dpi = 300)
         plt.close()
@@ -323,10 +394,13 @@ class analyzeTranswell():
 
                 try:
                     # load images
-                    sCI = singleCompositeImage(self.path, self.imgFile, self.dapi_ch, o4_ch=self.o4_ch, scalefactor=1, debug=False, gamma=self.gamma)
+                    sCI = singleCompositeImage(self.path, self.imgFile, 
+                        dapi_ch = self.dapi_ch, dapi_gamma = self.dapi_gamma, 
+                        o4_ch=self.o4_ch, o4_gamma = self.o4_gamma,
+                        scalefactor=1, debug=False)
 
                     # find autofluor
-                    self.findAutoFluorescenceMask(sCI)
+                    self.findAutoFluorescenceMask(sCI, gamma = self.autoFL_gamma, dilate = self.autoFL_dilate)
 
                     # find nuclei
                     self.findNucleiOnTranswell(sCI)
@@ -370,10 +444,10 @@ class analyzeTranswell():
                     raise
             print("Finished processing files and writing PDF to disk.")
 
-    def exportResults(self):
+    def exportResults(self, name_stem = 'results_folder_'):
         # output results as csv
         import csv
-        filename = 'results_folder_' + str(self.folder) + '.csv'
+        filename = name_stem + str(self.folder) + '.csv'
         with open(filename,'w',newline='') as f:
             # report analysis settings
             w = csv.writer(f)
@@ -386,17 +460,64 @@ class analyzeTranswell():
             w.writeheader()
             w.writerows(self.results)
 
+    def imageStats(self):
+
+        self.results = []
+        for file in self.files:
+            self.path = file['path'] 
+            self.imgFile = file['name']
+            print(f"Processing: {self.path}\\{self.imgFile}")
+
+            # parse file names  
+            stage, well, position = self.parseFileName(self.imgFile)
+            try:
+                # load images
+                sCI = singleCompositeImage(self.path, self.imgFile, 
+                    dapi_ch = self.dapi_ch, dapi_gamma = self.dapi_gamma, 
+                    o4_ch=self.o4_ch, o4_gamma = self.o4_gamma,
+                    scalefactor=1, debug=False)
+
+                self.dapi = sCI.images[sCI.dapi_ch]
+
+                dapi_focus = cv.Laplacian(self.dapi, cv.CV_64F).var()
+                if self.debug:
+                    print(f"dapi pre-gamma min: {np.min(self.dapi)}, median: {np.median(self.dapi)}, max: {np.max(self.dapi)}") 
+                    print(f"dapi focus: {dapi_focus}")
+
+                result = {
+                    'path': sCI.path,
+                    'imgFile': sCI.imgFile,
+                    'stage': stage,
+                    'well': well,
+                    'position': position,
+                    'dapi_min': np.min(self.dapi),
+                    'dapi_median': np.median(self.dapi),
+                    'dapi_max': np.max(self.dapi),
+                    'dapi_focus': dapi_focus                 
+                }
+                self.results.append(result)  
+
+            except:
+                    print(f"Failed on path '{self.path}'. Image: {self.imgFile}")
+                    raise
+
+        print("Finished gethering stats.")
+
 # run code
 
 javabridge.start_vm(class_path=bioformats.JARS)        
 
-# JW Transwell
-# a = analyzeTranswell(folder = 8, debug = False)
-a = analyzeTranswell(folder = 9, debug = False)
+""" JW Transwell experiments for SULF2 paper - run seperately due to memory limitations """
+# a = analyzeTranswell(folder = 8, debug = False) # Migration(1)
+# a = analyzeTranswell(folder = 9, debug = False) # Migration(2)
+# a = analyzeTranswell(folder = 10, debug = False) # Migration(3)
+# a = analyzeTranswell(folder = 11, debug = False) # Migration(4)
+a = analyzeTranswell(folder = 12, debug = False) # Migration(5)
 
+""" uncomment the following to run a debug on a specific image."""
 # newfiles = []
 # for file in a.files:
-#     if file['name'] == 'Migration assay(1)_NCKD_pre scrape + 594_D2-3_9478.vsi':
+#     if file['name'] == 'Migration assay(1)_NCKD_post scrape_B1-4_9930.vsi':
 #         newfiles.append(file)
 # a.files = newfiles
 # print(a.files)
@@ -404,6 +525,9 @@ a = analyzeTranswell(folder = 9, debug = False)
 
 a.runAnalysis()
 a.exportResults()
+
+# a.imageStats()
+# a.exportResults('imageStats_folder_')
 
 javabridge.kill_vm()
 
