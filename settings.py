@@ -186,8 +186,8 @@ class Settings:
                 # name: folder 9       
                 'name': "Migration Assay (Experiment 2) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
-                # 'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
+                # 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(2)',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
@@ -234,7 +234,8 @@ class Settings:
                 # name: folder 11
                 'name': "Migration Assay (Experiment 4) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(4)',
+                # 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(4)',
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(4)',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
@@ -257,7 +258,8 @@ class Settings:
                 # name: folder 12
                 'name': "Migration Assay (Experiment 5) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
-                'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(5)',
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(5)',
+                # 'root': 'Y:\\People\\Jackie\\Migration Assays (SULF2 paper)\\Migration Assay(5)',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?

@@ -209,8 +209,13 @@ class analyzeTranswell():
         
         dapi_blur = cv.GaussianBlur(dapi,(5,5),0)
 
-        dapi_thresh = cv.adaptiveThreshold(dapi_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
-            cv.THRESH_BINARY,23,4)
+        """ Set 'c' based on pre- or post-scrape - visual analysis showed this improved reliability of counts. """
+        if self.stage=="PRE":
+            dapi_thresh = cv.adaptiveThreshold(dapi_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
+                cv.THRESH_BINARY,23,4)
+        else:
+            dapi_thresh = cv.adaptiveThreshold(dapi_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
+                cv.THRESH_BINARY,23,10)
 
         dapi_only = cv.bitwise_not(cv.bitwise_and(cv.bitwise_not(dapi_thresh), cv.bitwise_not(self.autoFL)))
 
@@ -234,16 +239,21 @@ class analyzeTranswell():
             sCI.showImages([dapi_only, dapi_close, dapi_erode],['dapi_only','dapi_close','dapi_erode'])
 
         """ Calculate number of nuclei using standard approach. """
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = sCI.thresholdSegmentation(dapi_erode, dapi, opening_iterations = 2, background_iterations = 10, debug = self.debug)
+        """ Taylor whether or not to use the dapi_close or dapi_erode image based on pre- or post-scrape. """
+        if self.stage=="PRE":
+            self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = sCI.thresholdSegmentation(dapi_erode, dapi, opening_iterations = 2, background_iterations = 10, debug = self.debug)
+        else:
+            self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = sCI.thresholdSegmentation(dapi_close, dapi, opening_iterations = 2, background_iterations = 10, debug = self.debug)
+        # print(f"Nuclei Count: {self.nucleiCount}")
 
-        """ Use watershed markers to find countours. """
+        """ Use watershed markers to find contours. """
         # https://stackoverflow.com/questions/50882663/find-contours-after-watershed-opencv
         m1 = self.nucleiMarkers.astype(np.uint8)
-        ret, m2 = cv.threshold(m1, 0, 255, cv.THRESH_BINARY|cv.THRESH_OTSU)
+        # so the marker image borders are 255 but each cell is given a number above 2
+        # threshold of 2 or more will find all cells
+        ret, m2 = cv.threshold(m1, 2, 255, cv.THRESH_BINARY)
         # if self.debug:
-        #     cv.imshow('DAPI watershed-based threshold',m2)
-        #     cv.waitKey()
-        #     cv.destroyAllWindows()
+        #     sCI.showImages([m1,m2],['m1','m2'])
 
         """ Calculate contours from nuclei and filter based on size and circularity. """
         # from https://stackoverflow.com/questions/42203898/python-opencv-blob-detection-or-circle-detection
@@ -390,7 +400,7 @@ class analyzeTranswell():
                 print(f"Processing: {self.path}\\{self.imgFile}")
 
                 # parse file names
-                stage, well, position = self.parseFileName(self.imgFile)
+                self.stage, well, position = self.parseFileName(self.imgFile)
 
                 try:
                     # load images
@@ -414,7 +424,7 @@ class analyzeTranswell():
                     result = {
                         'path': sCI.path,
                         'imgFile': sCI.imgFile,
-                        'stage': stage,
+                        'stage': self.stage,
                         'well': well,
                         'position': position,
                         }
@@ -512,22 +522,31 @@ javabridge.start_vm(class_path=bioformats.JARS)
 # a = analyzeTranswell(folder = 9, debug = False) # Migration(2)
 # a = analyzeTranswell(folder = 10, debug = False) # Migration(3)
 # a = analyzeTranswell(folder = 11, debug = False) # Migration(4)
-a = analyzeTranswell(folder = 12, debug = False) # Migration(5)
+# a = analyzeTranswell(folder = 12, debug = False) # Migration(5)
 
 """ uncomment the following to run a debug on a specific image."""
 # newfiles = []
 # for file in a.files:
-#     if file['name'] == 'Migration assay(1)_NCKD_post scrape_B1-4_9930.vsi':
+#     if file['name'] == 'Migration assay(2)_S2KD_post scrape_D2-4_10270.vsi':
 #         newfiles.append(file)
 # a.files = newfiles
 # print(a.files)
 # a.debug = True
 
-a.runAnalysis()
-a.exportResults()
+""" uncomment to run count and export pdf/csv files. """
+# a.runAnalysis()
+# a.exportResults()
 
+""" uncomment to retrieve some basic image stats. """
 # a.imageStats()
 # a.exportResults('imageStats_folder_')
+
+""" runs analysis on mulitple experiments. (SLOW!!) """
+for i in range(8,13):
+    print(f"Running on folder {i}")
+    a = analyzeTranswell(folder = i, debug = False)
+    a.runAnalysis()
+    a.exportResults()
 
 javabridge.kill_vm()
 
