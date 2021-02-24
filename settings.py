@@ -278,8 +278,79 @@ class Settings:
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
             },            
+           {
+                # name: folder 13
+                'name': "Transwell experiment Jan 2021",
+                # root: path to folder
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Transwell Exps_2021\\Expt 1',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 1.0,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                'EdU_gamma': 1.0,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },           
+           {
+                # name: folder 14
+                'name': "Transwell experiment Feb 2021",
+                # root: path to folder
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\Transwell Exps_2021\\Expt 2',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 1.0,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                'EdU_gamma': 1.0,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },
+           {
+                # name: folder 14
+                'name': "IGFBP2 antibody experiment",
+                # root: path to folder
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\IGFBP2',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 0.8,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                'EdU_gamma': 1.0,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },
         ]
-
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
 

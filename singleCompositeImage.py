@@ -19,6 +19,7 @@ class singleCompositeImage():
         scalefactor: float = 1, 
         dapi_gamma: float = 1.0, 
         o4_gamma: float = 1.0,
+        EdU_gamma: float = 1.0,
         debug: bool = False):
         
         self.debug = debug
@@ -32,6 +33,7 @@ class singleCompositeImage():
         
         self.dapi_gamma = dapi_gamma
         self.o4_gamma = o4_gamma
+        self.EdU_gamma = EdU_gamma
 
         self.scalefactor = scalefactor
         self.debug = debug
@@ -52,7 +54,7 @@ class singleCompositeImage():
         elif(self.o4_ch is not None):
             self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch])
 
-    def processDAPI(self, threshold_method: str, gamma: float = -1, debug: bool=False):
+    def processDAPI(self, threshold_method: str, gamma: float = -1, blocksize = 11, C = 2, opening_iterations = 3, debug: bool=False):
         """ Process DAPI channel. """
 
         # if DAPI gamma not set, use global gamma setting
@@ -61,9 +63,9 @@ class singleCompositeImage():
 
         self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
         self.threshold_method = threshold_method
-        self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, debug)
+        self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, blocksize=blocksize, C=C, debug=debug)
         
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(self.nucleiThresh, self.nucleiImg, debug = debug)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(self.nucleiThresh, self.nucleiImg, opening_iterations = opening_iterations, debug=debug)
         self.centroids = self.output[3][1:,]
         self.centroid_x = self.centroids[:,0].astype(int)
         self.centroid_y = self.centroids[:,1].astype(int)
@@ -182,7 +184,7 @@ class singleCompositeImage():
 
         return img
 
-    def imageThreshold(self, img, threshold_method, debug=False):
+    def imageThreshold(self, img, threshold_method, blocksize = 11, C = 2, debug=False):
         """IMAGE THRESHOLDING."""
         # based on - https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
 
@@ -191,9 +193,9 @@ class singleCompositeImage():
 
         ret,th1 = cv.threshold(img_blur,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
         th2 = cv.adaptiveThreshold(img_blur,255,cv.ADAPTIVE_THRESH_MEAN_C,
-            cv.THRESH_BINARY,11,2)
+            cv.THRESH_BINARY, blocksize ,C)
         th3 = cv.adaptiveThreshold(img_blur,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv.THRESH_BINARY,11,2)
+            cv.THRESH_BINARY, blocksize, C)
         titles = ['Original Image (Blur)', 'Global Otsu Thresholding',
             'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
         images = [img_blur, th1, th2, th3]
@@ -245,7 +247,7 @@ class singleCompositeImage():
         # img = self.proccessNuclearImage(self.images[channel])
         img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
-        markers = cv.watershed(img,markers)
+        markers = cv.watershed(img, markers)
 
         img[markers == -1] = [255,0,0]
 

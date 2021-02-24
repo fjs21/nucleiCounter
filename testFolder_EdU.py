@@ -17,35 +17,51 @@ from commonFunctions import *
 settings = Settings()
 
 # manual settings
-# folder = 1
-# debug = False
-# thres = 'th2'
-# gamma = 0.5
-# model = loadKerasModel(settings.kerasModel)
+opening_iterations = 3
 
 # IGBFP2 experiment
-folder = 2
-debug = False
-thres = 'th2'
-gamma = 1.0
+# folder = 2
+# debug = False
 
 # Ahmed's n = 3 of the transwell experiments
 # images severly over saturated
 # folder = 5
 # debug = True
-# thres = 'th2'
-# gamma = 3
+
+# Jackie's Jan 2021 experiment
+# folder = 13
+# debug = False
+
+# Jackie's Feb 2021 experiment
+# folder = 14
+# debug = False
+
+# Jackie's IGFBP nAb in low and high density experiment
+# switched opening-iterations to 2 as it seemed to miss smaller nuclei
+folder = 15
+debug = False
+opening_iterations = 2 
+
 
 # retrieve settings using 'folder'
+name = settings.folder_dicts[folder]['name']
 root = settings.folder_dicts[folder]['root']
 pattern = settings.folder_dicts[folder]['pattern']
 files = find(pattern, root)
+
 dapi_ch = settings.folder_dicts[folder]['dapi_ch']
+dapi_gamma = settings.folder_dicts[folder]['dapi_gamma']
 o4_ch = settings.folder_dicts[folder]['o4_ch']
+o4_gamma = settings.folder_dicts[folder]['o4_gamma']
 EdU_ch = settings.folder_dicts[folder]['EdU_ch']
+EdU_gamma = settings.folder_dicts[folder]['EdU_gamma']
+
+thres = settings.folder_dicts[folder]['thres']
+
 marker_index = settings.folder_dicts[folder]['marker_index']
 
 # start analysis
+print(f"Starting analysis on {name}")
 print(f"Found {len(files)} matching '{pattern}' in '{root}'")
 print("***************************")
 
@@ -57,7 +73,7 @@ if debug:
     # files = list(files[i] for i in random.sample(list(range(len(files))), 1))
 
     # select five files to do manual count comparisons
-    files = list(files[i] for i in range(3,4)) 
+    files = list(files[i] for i in range(1,3)) 
 else:
     print("Starting to analyze images")
 
@@ -65,10 +81,13 @@ results = []
 
 def parseFileName(imgFile):
     """Extract stage, well and image position from file name."""
-    imgFile_split = imgFile.split('_')
-    if(imgFile_split[0].upper().find('PRE')>0):
+
+    imgFile_split = imgFile.rsplit('_',maxsplit=2)
+    imgFile_split.reverse()
+
+    if(imgFile_split[2].upper().find('PRE')>0):
         stage = "PRE"
-    elif(imgFile_split[0].upper().find('POST')>0):
+    elif(imgFile_split[2].upper().find('POST')>0):
         stage = "POST"
     else:
         stage = None
@@ -94,17 +113,20 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
         stage, well, position = parseFileName(imgFile)
 
         try:
-            sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch=o4_ch, EdU_ch=EdU_ch, scalefactor=1, debug=debug, gamma=gamma)
-            sCI.processDAPI(threshold_method=thres, gamma=gamma, debug=debug) # based on manual counts (see OneNote)
+            sCI = singleCompositeImage(path, imgFile,
+                        dapi_ch = dapi_ch, dapi_gamma = dapi_gamma, 
+                        EdU_ch = EdU_ch, EdU_gamma = EdU_gamma,
+                        scalefactor = 1, debug = debug)
+            sCI.processDAPI(threshold_method=thres, gamma=dapi_gamma, blocksize=23, C=10, opening_iterations = opening_iterations, debug=debug) # based on manual counts (see OneNote)
             if debug:
                 sCI.reportResults()
 
             """ EdU count. """
-            EdU = sCI.proccessNuclearImage(sCI.images[sCI.EdU_ch], gamma=gamma)
-            sCI.threshold_method = thres
-            sCI.imageThreshold(EdU, debug=debug)
+            EdU = sCI.proccessNuclearImage(sCI.images[sCI.EdU_ch], gamma=EdU_gamma)
+            # sCI.threshold_method = thres
+            EdU_thresh = sCI.imageThreshold(EdU, thres, blocksize=23, C=10, debug=debug)
         
-            EdU_count, EdU_output, EdU_mask, EdU_watershed = sCI.thresholdSegmentation(EdU_ch, debug=debug)
+            EdU_count, EdU_output, EdU_mask, EdU_watershed, EdU_markers = sCI.thresholdSegmentation(EdU_thresh, EdU, debug=debug)
             EdU_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, EdU_mask)
             ret,EdU_DAPI_markers = cv.connectedComponents(EdU_DAPI_overlap)
             EdU_count2 = EdU_DAPI_markers.max() # count does not use watershed step
@@ -112,6 +134,7 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
             """ Generate a summary PDF to quickly review DAPI and EdU counts. """
             EdU_centroid_x = EdU_output[3][1:,0].astype(int)
             EdU_centroid_y = EdU_output[3][1:,1].astype(int)
+
 
             plt.figure(figsize= (20,10))
             plt.suptitle(f"{path}\\{imgFile}")
@@ -125,20 +148,20 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
             plt.close()
 
             """ mCherry count. """
-            mCherry = sCI.proccessNuclearImage(sCI.images[2], gamma=0.5)
-            sCI.threshold_method = thres
-            sCI.imageThreshold(mCherry, debug=debug)
-            mCherry_count, mCherry_output, mCherry_mask, mCherry_watershed = sCI.thresholdSegmentation(2, debug=debug)
+            # mCherry = sCI.proccessNuclearImage(sCI.images[2], gamma=0.5)
+            # sCI.threshold_method = thres
+            # sCI.imageThreshold(mCherry, debug=debug)
+            # mCherry_count, mCherry_output, mCherry_mask, mCherry_watershed = sCI.thresholdSegmentation(2, debug=debug)
 
             # plt.subplot(1,3,1),plt.imshow(sCI.nucleiMask)
             # plt.subplot(1,3,2),plt.imshow(mCherry_mask)
             
-            mCherry_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, mCherry_mask)
-            ret,mCherry_DAPI_markers = cv.connectedComponents(mCherry_DAPI_overlap)
+            # mCherry_DAPI_overlap = cv.bitwise_and(sCI.nucleiMask, mCherry_mask)
+            # ret,mCherry_DAPI_markers = cv.connectedComponents(mCherry_DAPI_overlap)
             # print(f"Number of mCherry+ cells: {markers.max()}")
 
-            mCherry_EdU_overlap = cv.bitwise_and(EdU_DAPI_overlap, mCherry_mask)
-            ret,mCherry_EdU_markers = cv.connectedComponents(mCherry_EdU_overlap)
+            # mCherry_EdU_overlap = cv.bitwise_and(EdU_DAPI_overlap, mCherry_mask)
+            # ret,mCherry_EdU_markers = cv.connectedComponents(mCherry_EdU_overlap)
             
             # plt.subplot(1,3,3),plt.imshow(overlap)
             # plt.show()
@@ -155,12 +178,12 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
                     'well': well,
                     'position': position,
                     'nucleiCount': sCI.nucleiCount,
-                    'o4pos_count': sCI.o4pos_count,
-                    'o4neg_count': sCI.o4neg_count,
-                    'o4%': "{:.2%}".format(sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)),
+                    # 'o4pos_count': sCI.o4pos_count,
+                    # 'o4neg_count': sCI.o4neg_count,
+                    # 'o4%': "{:.2%}".format(sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)),
                     'EdU_count': EdU_count,
-                    'mCherry_count': mCherry_DAPI_markers.max(),
-                    'mCherryEdU_count': mCherry_EdU_markers.max(),
+                    # 'mCherry_count': mCherry_DAPI_markers.max(),
+                    # 'mCherryEdU_count': mCherry_EdU_markers.max(),
                     })
 
             else:            
@@ -172,8 +195,8 @@ with PdfPages('results_folder_' + str(folder) + '.pdf') as export_pdf:
                     'position': position,
                     'nucleiCount': sCI.nucleiCount,
                     'EdU_count': EdU_count,
-                    'mCherry_count': mCherry_DAPI_markers.max(),
-                    'mCherryEdU_count': mCherry_EdU_markers.max(),
+                    # 'mCherry_count': mCherry_DAPI_markers.max(),
+                    # 'mCherryEdU_count': mCherry_EdU_markers.max(),
                     'EdU_count2': EdU_count2,
                     })
         except:
@@ -187,8 +210,7 @@ with open(filename,'w',newline='') as f:
     # report analysis settings
     w = csv.writer(f)
     w.writerow([
-        'gamma', gamma,
-        'thres', thres,
+        'name', name
         ])
     w.writerow('')
     # results
