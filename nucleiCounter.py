@@ -85,8 +85,10 @@ class Application(tk.Frame):
         tk.Entry(self.top_right, width=20, textvariable=dapi_ch,
                           font = tkFont.Font(family="Calibri", size=12)).pack(fill = 'x')
 
-        o4_ch = None
-        marker_index = None
+        o4_ch = tk.IntVar()
+        o4_ch.set(1)
+        tk.Entry(self.top_right, width=20, textvariable=o4_ch,
+                          font = tkFont.Font(family="Calibri", size=12)).pack(fill = 'x')
 
         debug = tk.BooleanVar()
         debug.set(False)
@@ -99,7 +101,8 @@ class Application(tk.Frame):
                           command=lambda: self.start_analysis(self.root.get(), 
                                                             pattern.get(), 
                                                             dapi_ch.get(), 
-                                                            o4_ch, marker_index,
+                                                            o4_ch.get(),
+                                                            marker_index,
                                                             debug = debug.get()),
                           font = tkFont.Font(family="Calibri", size=12))
         button2.pack(side="top")
@@ -170,14 +173,21 @@ class Application(tk.Frame):
             imgFile = file['name']
 
             # parse file names
-            imgFile_split = imgFile.split('_')
-            if(imgFile_split[0].upper().find('PRE')>0):
-                stage = "PRE"
-            else:
-                stage = "POST"
-            well_position = imgFile_split[1].split('-')
-            well = well_position[0]
-            position = well_position[1]
+            try:
+                imgFile_split = imgFile.split('_')
+                if(imgFile_split[0].upper().find('PRE')>0):
+                    stage = "PRE"
+                else:
+                    stage = "POST"
+                well_position = imgFile_split[1].split('-')
+                well = well_position[0]
+                position = well_position[1]
+            except:
+                print('Could not parse file name: %s', imgFile)
+                stage = ""
+                well_position = ""
+                well = ""
+                position = ""
 
             try:
                 sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=debug)

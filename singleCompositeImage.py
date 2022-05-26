@@ -97,7 +97,10 @@ class singleCompositeImage():
             if not ret:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), fullpath)
         elif Path(fullpath).suffix == '.vsi':
-            images = self.openVSI()
+            images = self.openBioformats()
+        else:
+            print('Filetype: %s not recognized trying bioformats.', Path(fullpath).suffix))
+            images = self.openBioformats()
 
         if self.debug or debug:
             print(f"Loaded '{self.imgFile}' from '{self.path}'\n with {len(images)} channels.")
@@ -116,7 +119,7 @@ class singleCompositeImage():
 
         return images
 
-    def openVSI(self, debug: bool = False):
+    def openBioformats(self, debug: bool = False):
         """Using bioformats to open .vsi image"""
         fullpath = fullPath(self.path, self.imgFile)
         images = bioformats.load_image(fullpath, rescale=False)
