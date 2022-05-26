@@ -154,7 +154,7 @@ class Application(tk.Frame):
 
             # select five files to do manual count comparisons
             self.console.insert("end","\ndebug: selecting first two files to do manual count comparisons") 
-            files = list(files[i] for i in range(1,2)) 
+            files = list(files[i] for i in range(0,2)) 
 
         results = []
 
