@@ -516,7 +516,7 @@ class singleCompositeImage():
         plt.figure(figsize= (10,10))
         plt.imshow(self.rgb)
         plt.title(os.path.join(self.path,self.imgFile)[-80:])
-        plt.scatter(cell_info[:,0],cell_info[:,1],c=cell_info[:,2],s=0.2)
+        plt.scatter(cell_info[:,0],cell_info[:,1],c=np.array(self.settings.dotColors)[cell_info[:,2].astype(int)],s=0.2)
         # if marker_index != 0:
         #     if pattern == '*MMStack.ome*.tif':
         #         markerFile = findNewestMarkerFile(self.path)

@@ -8,6 +8,14 @@ class Settings:
         self.width = 128
         self.height = 128
 
+        self.dotColors = ['orange','cyan']
+
+        # Define distance between centroid and marker cutoff over which cell will not be classified
+        self.fD_cutoff = 50
+
+        # Keras Model
+        self.kerasModel = 'o4counter_wAug_5.1.h5'
+
         # Define folders for input of data
         self.folder_dicts = [
             {
@@ -327,10 +335,10 @@ class Settings:
                 'autoFL_gamma': 1,
             },
            {
-                # name: folder 14
+                # name: folder 15
                 'name': "IGFBP2 antibody experiment",
                 # root: path to folder
-                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\IGFBP2',
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\IGFBP2\\Feb 2021',
                 # pattern: define file
                 'pattern': '*.vsi',
                 # which channel is DAPI?
@@ -350,9 +358,52 @@ class Settings:
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
             },
-        ]
-        # Define distance between centroid and marker cutoff over which cell will not be classified
-        self.fD_cutoff = 50
-
-        # Keras Model
-        self.kerasModel = 'o4counter_wAug_5.1.h5'
+            {
+                # name: folder 16
+                'name': "IGFBP2 antibody experiment",
+                # root: path to folder
+                'root': 'C:\\Users\\fjs21\\Box\\NewLabData\\People\\Jackie\\IGFBP2\\Mar 2021',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 0.8,
+                # which channel is O4?
+                'o4_ch': None,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': 1,
+                'EdU_gamma': 1.0,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },
+            {
+                # name: folder 17
+                'name': "Evan's Noggin and OKN experiment",
+                # root: path to folder
+                'root': '~/Library/Mobile\ Documents/com~apple~CloudDocs/Research\&Lab/Data/Automated\ Cell\ Counts/2022-03-04\ \(Evans\ OKN\ \&\ Noggin\ plate\)',
+                # pattern: define file
+                'pattern': '*.vsi',
+                # which channel is DAPI?
+                'dapi_ch': 0,
+                'dapi_gamma': 0.8,
+                # which channel is O4?
+                'o4_ch': 1,
+                'o4_gamma': 1,
+                # which channel is EdU?
+                'EdU_ch': None,
+                'EdU_gamma': 1.0,
+                # which marker counts the O4 counts
+                'marker_index' : None,
+                # set threshold method
+                'thres': 'th2',
+                # settings for autoFL channel
+                'autoFL_dilate': False,
+                'autoFL_gamma': 1,
+            },        ]
+        
