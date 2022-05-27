@@ -39,6 +39,7 @@ settings = Settings()
 # thres = 'th2'
 
 path = 'Y:\\People\\Roopa\\dk si alpha expts\\siBK 0731 sample\\NC\\oxo'
+path = '/Volumes/labdata/People/Roopa/dk si alpha expts/siBK 0731 sample/NC/oxo'
 imgFile = 'siBK 07312019_C2-11_7321.vsi'
 dapi_ch = 1
 o4_ch = 2

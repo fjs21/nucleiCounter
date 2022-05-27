@@ -74,6 +74,18 @@ class Application(tk.Frame):
             font = tkFont.Font(family="Calibri", size=12))
 
         l7 = tk.Label(self.top_frame,
+            text = """7. Which image slice contains the EdU image?""",
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l8 = tk.Label(self.top_frame,
+            text = """8. EdU gamma = """,
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l9 = tk.Label(self.top_frame,
             text = """Enable debug?""",
             anchor = 'e',
             font = tkFont.Font(family="Calibri", size=12))
@@ -85,6 +97,8 @@ class Application(tk.Frame):
         l5.grid(row = 3, column = 0, sticky = 'w', pady = 2)
         l6.grid(row = 3, column = 2, sticky = 'w', pady = 2)
         l7.grid(row = 4, column = 0, sticky = 'w', pady = 2)
+        l8.grid(row = 4, column = 2, sticky = 'w', pady = 2)
+        l9.grid(row = 5, column = 0, sticky = 'w', pady = 2)
 
         e1 = tk.Frame(self.top_frame)
         
@@ -289,7 +303,7 @@ class Application(tk.Frame):
 
                 self.console.update()
                 self.console.yview("end")
-                
+
         # output results as csv
         import csv
         filename = fullPath(root, 'results_nucleiCounter.csv')
