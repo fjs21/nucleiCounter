@@ -103,9 +103,9 @@ class Application(tk.Frame):
         e1 = tk.Frame(self.top_frame)
         
         tk.Button(e1,
-                          text="Browse",                          
-                          command=lambda: self.select_folder(),
-                          font = tkFont.Font(family="Calibri", size=12)).pack(side=tk.RIGHT)
+            text="Browse",                          
+            command=lambda: self.select_folder(),
+            font = tkFont.Font(family="Calibri", size=12)).pack(side=tk.RIGHT)
 
         self.root = tk.StringVar()
         tk.Entry(e1, width=80, textvariable = self.root,
