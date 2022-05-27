@@ -141,10 +141,22 @@ class Application(tk.Frame):
         e6 = tk.Entry(self.top_frame, width=20, textvariable=o4_gamma,
             font = tkFont.Font(family="Calibri", size=12))
 
+        # set EdU channel
+        edu_ch = tk.IntVar()
+        #edu_ch.set(1)
+        e7 = tk.Entry(self.top_frame, width=20, textvariable=edu_ch,
+            font = tkFont.Font(family="Calibri", size=12))
+
+        # set EdU gamma
+        edu_gamma = tk.DoubleVar()
+        edu_gamma.set(1.0)
+        e8 = tk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
+            font = tkFont.Font(family="Calibri", size=12))
+
         # debug mode?
         debug = tk.BooleanVar()
         debug.set(False)
-        e7 = tk.Checkbutton(self.top_frame, text='', variable=debug,
+        e9 = tk.Checkbutton(self.top_frame, text='', variable=debug,
             onvalue=True, offvalue=False,
             anchor='w')
 
@@ -154,7 +166,9 @@ class Application(tk.Frame):
         e4.grid(row = 2, column = 3, sticky = 'w', pady = 2)
         e5.grid(row = 3, column = 1, sticky = 'w', pady = 2)
         e6.grid(row = 3, column = 3, sticky = 'w', pady = 2)
-        e7.grid(row = 4, column = 1, columnspan = 3, sticky = 'w', pady = 2)
+        e7.grid(row = 4, column = 1, sticky = 'w', pady = 2)
+        e8.grid(row = 4, column = 3, sticky = 'w', pady = 2)
+        e9.grid(row = 5, column = 1, columnspan = 3, sticky = 'w', pady = 2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -195,7 +209,7 @@ class Application(tk.Frame):
         import os
         self.root.set(os.path.abspath(fileDialog.askdirectory(title='Select source folder containing image files')))
         
-    def start_analysis(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, debug: bool = False):
+    def start_analysis(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, edu_ch:int = None, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, edu_gamma:float = 1.0, debug: bool = False):
 
         # start analysis
         files = find(pattern, root)
@@ -215,7 +229,7 @@ class Application(tk.Frame):
             # select five files at random
             #files = list(files[i] for i in random.sample(list(range(len(files))), 5))
 
-            # select five files to do manual count comparisons
+            # select first two files to do manual count comparisons
             self.console.insert("end","\ndebug: selecting first two files to do manual count comparisons") 
             files = list(files[i] for i in range(0,2)) 
 
