@@ -11,9 +11,11 @@ import javabridge
 import bioformats
 javabridge.start_vm(class_path=bioformats.JARS)
 
+from settings import Settings
 from commonFunctions import *
-#from settings import Settings
 from singleCompositeImage import singleCompositeImage
+
+settings = Settings()
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -57,6 +59,12 @@ class Application(tk.Frame):
             font = tkFont.Font(family="Calibri", size=12)).pack(fill='x')
 
         tk.Label(self.top_left,
+            text = """4. Which image slice contains the O4 image?""",
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12)).pack(fill='x')
+
+        tk.Label(self.top_left,
             text = """Enable debug?""",
             anchor = 'e',
             font = tkFont.Font(family="Calibri", size=12)).pack(fill='x')
@@ -85,10 +93,12 @@ class Application(tk.Frame):
         tk.Entry(self.top_right, width=20, textvariable=dapi_ch,
                           font = tkFont.Font(family="Calibri", size=12)).pack(fill = 'x')
 
-        o4_ch = tk.IntVar()
-        o4_ch.set(1)
+        o4_ch = tk.StringVar()
+        o4_ch.set(None)
         tk.Entry(self.top_right, width=20, textvariable=o4_ch,
                           font = tkFont.Font(family="Calibri", size=12)).pack(fill = 'x')
+
+        marker_index = None
 
         debug = tk.BooleanVar()
         debug.set(False)
@@ -134,6 +144,10 @@ class Application(tk.Frame):
         
     def start_analysis(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, marker_index:int, debug: bool = False):
 
+        if o4_ch != "":
+            # load Keras model
+            model = loadKerasModel(settings.kerasModel)
+
         # start analysis
         files = find(pattern, root)
         self.console.delete(1.0,tk.END)
@@ -173,21 +187,7 @@ class Application(tk.Frame):
             imgFile = file['name']
 
             # parse file names
-            try:
-                imgFile_split = imgFile.split('_')
-                if(imgFile_split[0].upper().find('PRE')>0):
-                    stage = "PRE"
-                else:
-                    stage = "POST"
-                well_position = imgFile_split[1].split('-')
-                well = well_position[0]
-                position = well_position[1]
-            except:
-                print('Could not parse file name: %s', imgFile)
-                stage = ""
-                well_position = ""
-                well = ""
-                position = ""
+            stage, well, position = parseFileName(imgFile)
 
             try:
                 sCI = singleCompositeImage(path, imgFile, dapi_ch, o4_ch, scalefactor=1, debug=debug)
@@ -197,14 +197,33 @@ class Application(tk.Frame):
                     self.console.insert('end', f"\nimgFile: {sCI.imgFile} found {sCI.nucleiCount} DAPI+ nuclei.")
                     self.console.update()                 
    
-                results.append({
-                    'path': sCI.path,
-                    'imgFile': sCI.imgFile,
-                    'stage': stage,
-                    'well': well,
-                    'position': position,
-                    'nucleiCount': sCI.nucleiCount
-                    })
+                if "model" in locals():
+                    sCI.processCells()
+                    sCI.getPredictions(model)
+                    sCI.processPredictions(export_pdf)
+
+                    results.append({
+                        'path': sCI.path,
+                        'imgFile': sCI.imgFile,
+                        'stage': stage,
+                        'well': well,
+                        'position': position,
+                        'nucleiCount': sCI.nucleiCount,
+                        'o4pos_count': sCI.o4pos_count,
+                        'o4neg_count': sCI.o4neg_count,
+                        'o4%': "{:.2%}".format(sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)),
+                        })
+
+                else:            
+                    results.append({
+                        'path': sCI.path,
+                        'imgFile': sCI.imgFile,
+                        'stage': stage,
+                        'well': well,
+                        'position': position,
+                        'nucleiCount': sCI.nucleiCount,
+                        })
+
             except:
                 self.console.insert("end",f"\nFailed on path '{path}'. Image: {imgFile}")
                 raise

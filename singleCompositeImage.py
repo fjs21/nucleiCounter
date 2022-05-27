@@ -99,7 +99,7 @@ class singleCompositeImage():
         elif Path(fullpath).suffix == '.vsi':
             images = self.openBioformats()
         else:
-            print('Filetype: %s not recognized trying bioformats.', Path(fullpath).suffix))
+            print('Filetype: %s not recognized trying bioformats.', Path(fullpath).suffix)
             images = self.openBioformats()
 
         if self.debug or debug:

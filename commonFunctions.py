@@ -1,4 +1,4 @@
-import os, fnmatch
+import os, platform, fnmatch
 
 from settings import Settings
 
@@ -10,7 +10,12 @@ def fullPath(root, name='', binary=False):
         else:
             fullpath = '\\\\?\\'.encode('utf8','ignore') + os.path.join(os.getcwd().encode('utf8','ignore'),root,name)
     else:
-        fullpath = '\\\\?\\' + os.path.join(os.getcwd(),root,name)
+        if platform.system() == 'Windows':
+            fullpath = '\\\\?\\' + os.path.join(os.getcwd(),root,name)
+        elif platform.system() == 'Darwin':
+            fullpath = os.path.join(os.getcwd(),root,name)
+        else:
+            raise 'Platform not recognized'
     return fullpath
 
 def fileModified(root, name, binary=False):
@@ -99,6 +104,26 @@ def fix_unicode_filenames(folder):
     #     for markerFile in markerFiles:
     #         chkName(fullPath(markerFile['path'],markerFile['name'],binary=True))
     print("** All done! This folder can now be analyzed. **")
+
+def parseFileName(imgFile):
+    """Extract stage, well and image position from file name."""
+    imgFile_split = imgFile.split('_')
+    if(imgFile_split[0].upper().find('PRE')>0):
+        stage = "PRE"
+    elif(imgFile_split[0].upper().find('POST')>0):
+        stage = "POST"
+    else:
+        stage = None
+
+    well_position = imgFile_split[1].split('-')
+    well = well_position[0]
+    try:
+        position = well_position[1]
+    except:
+        print(f"Error parsing: {imgFile}")
+        position = None  
+
+    return [stage, well, position]
 
 def loadKerasModel(filename):
     """Load h5 model file."""
