@@ -92,6 +92,12 @@ class Application(tk.Frame):
             font = tkFont.Font(family="Calibri", size=12))
 
         l10 = tk.Label(self.top_frame,
+            text = """9. Scalefactor = """,
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l11 = tk.Label(self.top_frame,
             text = """Enable debug?""",
             anchor = 'e',
             font = tkFont.Font(family="Calibri", size=12))
@@ -106,6 +112,7 @@ class Application(tk.Frame):
         l8.grid(row = 5, column = 0, sticky = 'w', pady = 2)
         l9.grid(row = 5, column = 2, sticky = 'w', pady = 2)
         l10.grid(row = 6, column = 0, sticky = 'w', pady = 2)
+        l11.grid(row = 6, column = 2, sticky = 'w', pady = 2)
 
         e1 = tk.Frame(self.top_frame)
         
@@ -161,10 +168,16 @@ class Application(tk.Frame):
         e8 = tk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
             font = tkFont.Font(family="Calibri", size=12))
 
+        # set scalefactor
+        scalefactor = tk.DoubleVar()
+        scalefactor.set(settings.defaults["scalefactor"])
+        e9 = tk.Entry(self.top_frame, width=20, textvariable=scalefactor,
+            font = tkFont.Font(family="Calibri", size=12))
+
         # debug mode?
         debug = tk.BooleanVar()
         debug.set(settings.defaults["debug"])
-        e9 = tk.Checkbutton(self.top_frame, text='', variable=debug,
+        e10 = tk.Checkbutton(self.top_frame, text='', variable=debug,
             onvalue=True, offvalue=False,
             anchor='w')
 
@@ -176,7 +189,8 @@ class Application(tk.Frame):
         e6.grid(row = 4, column = 3, sticky = 'w', pady = 2)
         e7.grid(row = 5, column = 1, sticky = 'w', pady = 2)
         e8.grid(row = 5, column = 3, sticky = 'w', pady = 2)
-        e9.grid(row = 6, column = 1, columnspan = 3, sticky = 'w', pady = 2)
+        e9.grid(row = 6, column = 1, sticky = 'w', pady = 2)
+        e10.grid(row = 6, column = 3, columnspan = 3, sticky = 'w', pady = 2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -189,6 +203,7 @@ class Application(tk.Frame):
                 o4_gamma = o4_gamma.get(),
                 edu_ch = edu_ch.get(),
                 edu_gamma = edu_gamma.get(),
+                scalefactor = scalefactor.get(),
                 debug = debug.get()),
             font = tkFont.Font(family="Calibri", size=12))
         button2.pack(side="top")
@@ -219,13 +234,34 @@ class Application(tk.Frame):
         import os
         self.root.set(os.path.abspath(fileDialog.askdirectory(title='Select source folder containing image files')))
         
-    def start_analysis(self, root:str, pattern:str, dapi_ch:int, o4_ch:int = -1, edu_ch:int = -1, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, edu_gamma:float = 1.0, debug: bool = False):
+    def start_analysis(
+        self,
+        root:str, 
+        pattern:str, 
+        dapi_ch:int, 
+        o4_ch:int = -1, 
+        edu_ch:int = -1, 
+        dapi_gamma:float = 1.0, 
+        o4_gamma:float = 1.0, 
+        edu_gamma:float = 1.0, 
+        scalefactor:float = 1.0, 
+        debug: bool = False):
 
         # clear console
         self.console.delete(1.0,tk.END)
 
         # save settings
-        settings.updateDefaults(root, pattern, dapi_ch, o4_ch, edu_ch, dapi_gamma, o4_gamma, edu_gamma, debug)
+        settings.updateDefaults(
+            root, 
+            pattern, 
+            dapi_ch, 
+            o4_ch, 
+            edu_ch, 
+            dapi_gamma, 
+            o4_gamma, 
+            edu_gamma, 
+            scalefactor,
+            debug)
 
         # set o4_ch and edu_ch to none if -1
         if (o4_ch == -1):
@@ -370,7 +406,7 @@ class Application(tk.Frame):
 
 # Starts application.
 root = tk.Tk()
-root.eval('tk::PlaceWindow . center')
+root.geometry('+100+100')
 root.resizable(width=False, height=False)
 app = Application(master=root)
 app.mainloop()        

@@ -121,7 +121,7 @@ class singleCompositeImage():
                 else:
                     titles.append(f'channel #{i}')
 
-            self.showImages(images, titles, 'Loaded Images')    
+            self.showImages(images, title = fullpath, titles = titles, 'Loaded Images')    
 
         return images
 
@@ -143,7 +143,7 @@ class singleCompositeImage():
             self.images[i] = cv.resize(self.images[i], dim, interpolation = cv.INTER_AREA)
         print(self.images[0].shape)
 
-    def showImages(self, images, titles='', suptitle=''):
+    def showImages(self, images, maintitle = 'Images', titles='', suptitle=''):
         # mng = plt.get_current_fig_manager()
         # mng.full_screen_toggle()
 
@@ -168,6 +168,7 @@ class singleCompositeImage():
             else:
                 fig.delaxes(ax)
         plt.tight_layout()
+        plt.figure(maintitle)
         plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
         plt.show()
 

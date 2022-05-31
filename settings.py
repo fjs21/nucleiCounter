@@ -36,6 +36,7 @@ class Settings:
                 "dapi_gamma": 1.0, 
                 "o4_gamma": 1.0, 
                 "edu_gamma": 1.0, 
+                "scalefactor": 1.0,
                 "debug": true}
 
         # Define folders for input of data
@@ -429,7 +430,17 @@ class Settings:
                 'autoFL_gamma': 1,
             },        ]
 
-    def updateDefaults(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, edu_ch:int = None, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, edu_gamma:float = 1.0, debug: bool = False):
+    def updateDefaults(self,
+        root:str, 
+        pattern:str, 
+        dapi_ch:int, 
+        o4_ch:int, 
+        edu_ch:int = None, 
+        dapi_gamma:float = 1.0, 
+        o4_gamma:float = 1.0, 
+        edu_gamma:float = 1.0, 
+        scalefactor:float = 1.0,
+        debug: bool = False):
         """ Save defaults to temporary file. """
 
         defaults = {
@@ -441,6 +452,7 @@ class Settings:
             "dapi_gamma": dapi_gamma,
             "o4_gamma": o4_gamma,
             "edu_gamma": edu_gamma,
+            "scalefactor": scalefactor,
             "debug": debug
             }
 
