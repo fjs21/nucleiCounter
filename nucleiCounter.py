@@ -50,42 +50,48 @@ class Application(tk.Frame):
             font = tkFont.Font(family="Calibri", size=12))
 
         l3 = tk.Label(self.top_frame,
-            text = """3. Which image slice contains the DAPI image?""",
+            text = """Choose slice for each antigen label, use -1 to indicate antigen not present.""",
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l4 = tk.Label(self.top_frame,
-            text = """4. DAPI gamma = """,
+            text = """3. Which image slice contains the DAPI image?""",
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l5 = tk.Label(self.top_frame,
-            text = """5. Which image slice contains the O4 image?""",
+            text = """4. DAPI gamma = """,
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l6 = tk.Label(self.top_frame,
-            text = """6. O4 gamma = """,
+            text = """5. Which image slice contains the O4 image?""",
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l7 = tk.Label(self.top_frame,
-            text = """7. Which image slice contains the EdU image?""",
+            text = """6. O4 gamma = """,
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l8 = tk.Label(self.top_frame,
-            text = """8. EdU gamma = """,
+            text = """7. Which image slice contains the EdU image?""",
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l9 = tk.Label(self.top_frame,
+            text = """8. EdU gamma = """,
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l10 = tk.Label(self.top_frame,
             text = """Enable debug?""",
             anchor = 'e',
             font = tkFont.Font(family="Calibri", size=12))
@@ -93,12 +99,13 @@ class Application(tk.Frame):
         l1.grid(row = 0, column = 0, sticky = 'w', pady = 2)
         l2.grid(row = 1, column = 0, sticky = 'w', pady = 2)
         l3.grid(row = 2, column = 0, sticky = 'w', pady = 2)
-        l4.grid(row = 2, column = 2, sticky = 'w', pady = 2)
-        l5.grid(row = 3, column = 0, sticky = 'w', pady = 2)
-        l6.grid(row = 3, column = 2, sticky = 'w', pady = 2)
-        l7.grid(row = 4, column = 0, sticky = 'w', pady = 2)
-        l8.grid(row = 4, column = 2, sticky = 'w', pady = 2)
-        l9.grid(row = 5, column = 0, sticky = 'w', pady = 2)
+        l4.grid(row = 3, column = 0, sticky = 'w', pady = 2)
+        l5.grid(row = 3, column = 2, sticky = 'w', pady = 2)
+        l6.grid(row = 4, column = 0, sticky = 'w', pady = 2)
+        l7.grid(row = 4, column = 2, sticky = 'w', pady = 2)
+        l8.grid(row = 5, column = 0, sticky = 'w', pady = 2)
+        l9.grid(row = 5, column = 2, sticky = 'w', pady = 2)
+        l10.grid(row = 6, column = 0, sticky = 'w', pady = 2)
 
         e1 = tk.Frame(self.top_frame)
         
@@ -131,19 +138,19 @@ class Application(tk.Frame):
 
         # set O4 channel
         o4_ch = tk.IntVar()
-        o4_ch.set(1)
+        o4_ch.set(-1)
         e5 = tk.Entry(self.top_frame, width=20, textvariable=o4_ch,
             font = tkFont.Font(family="Calibri", size=12))
 
         # set O4 gamma
         o4_gamma = tk.DoubleVar()
-        o4_gamma.set(1.0)
+        o4_gamma.set(1)
         e6 = tk.Entry(self.top_frame, width=20, textvariable=o4_gamma,
             font = tkFont.Font(family="Calibri", size=12))
 
         # set EdU channel
         edu_ch = tk.IntVar()
-        #edu_ch.set(1)
+        edu_ch.set(-1)
         e7 = tk.Entry(self.top_frame, width=20, textvariable=edu_ch,
             font = tkFont.Font(family="Calibri", size=12))
 
@@ -162,13 +169,13 @@ class Application(tk.Frame):
 
         e1.grid(row = 0, column = 1, columnspan = 3, sticky = 'w', pady = 2)
         e2.grid(row = 1, column = 1, columnspan = 3, sticky = 'w', pady = 2)
-        e3.grid(row = 2, column = 1, sticky = 'w', pady = 2)
-        e4.grid(row = 2, column = 3, sticky = 'w', pady = 2)
-        e5.grid(row = 3, column = 1, sticky = 'w', pady = 2)
-        e6.grid(row = 3, column = 3, sticky = 'w', pady = 2)
-        e7.grid(row = 4, column = 1, sticky = 'w', pady = 2)
-        e8.grid(row = 4, column = 3, sticky = 'w', pady = 2)
-        e9.grid(row = 5, column = 1, columnspan = 3, sticky = 'w', pady = 2)
+        e3.grid(row = 3, column = 1, sticky = 'w', pady = 2)
+        e4.grid(row = 3, column = 3, sticky = 'w', pady = 2)
+        e5.grid(row = 4, column = 1, sticky = 'w', pady = 2)
+        e6.grid(row = 4, column = 3, sticky = 'w', pady = 2)
+        e7.grid(row = 5, column = 1, sticky = 'w', pady = 2)
+        e8.grid(row = 5, column = 3, sticky = 'w', pady = 2)
+        e9.grid(row = 6, column = 1, columnspan = 3, sticky = 'w', pady = 2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -210,6 +217,13 @@ class Application(tk.Frame):
         self.root.set(os.path.abspath(fileDialog.askdirectory(title='Select source folder containing image files')))
         
     def start_analysis(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, edu_ch:int = None, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, edu_gamma:float = 1.0, debug: bool = False):
+
+        # set o4_ch and edu_ch to none if -1
+        if (o4_ch == -1):
+            o4_ch = None
+
+        if (edu_ch == -1):
+            edu_ch = None
 
         # start analysis
         files = find(pattern, root)
