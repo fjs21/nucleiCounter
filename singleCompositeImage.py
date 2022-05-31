@@ -14,12 +14,18 @@ from commonFunctions import fullPath
 
 class singleCompositeImage():
 
-    def __init__(self: str, path: str, imgFile: str, dapi_ch: int, o4_ch: int=None, EdU_ch: int=None,
-        # to take into account different magnifications across images and training set
-        scalefactor: float = 1, 
+    def __init__(
+        self: str, 
+        path: str, 
+        imgFile: str, 
+        dapi_ch: int, 
+        o4_ch: int=None,
+        EdU_ch: int=None,
         dapi_gamma: float = 1.0, 
         o4_gamma: float = 1.0,
         EdU_gamma: float = 1.0,
+        # to take into account different magnifications across images and training set
+        scalefactor: float = 1, 
         debug: bool = False):
         
         self.debug = debug

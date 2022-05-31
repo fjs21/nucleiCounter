@@ -142,3 +142,4 @@ cython_debug/
 *.csv
 *.xlsx
 *.pdf
+defaults.json

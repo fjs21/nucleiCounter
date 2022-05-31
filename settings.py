@@ -1,3 +1,5 @@
+import json
+
 class Settings:
     """A class to store all settings."""
 
@@ -15,6 +17,26 @@ class Settings:
 
         # Keras Model
         self.kerasModel = 'o4counter_wAug_5.1.h5'
+
+
+        # Defaults
+        filename = "defaults.json"
+        try:
+            with open(filename) as f:
+                self.defaults = json.load(f)
+            print(self.defaults)
+        except FileNotFoundError:
+            print("Defaults not found")
+            self.defaults = {
+                "root": "/Users/frasersim/Desktop/2022-03-04 (Evans OKN & Noggin plate)", 
+                "pattern": "*.vsi", 
+                "dapi_ch": 0, 
+                "o4_ch": -1, 
+                "edu_ch": -1, 
+                "dapi_gamma": 1.0, 
+                "o4_gamma": 1.0, 
+                "edu_gamma": 1.0, 
+                "debug": true}
 
         # Define folders for input of data
         self.folder_dicts = [
@@ -406,4 +428,25 @@ class Settings:
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
             },        ]
+
+    def updateDefaults(self, root:str, pattern:str, dapi_ch:int, o4_ch:int, edu_ch:int = None, dapi_gamma:float = 1.0, o4_gamma:float = 1.0, edu_gamma:float = 1.0, debug: bool = False):
+        """ Save defaults to temporary file. """
+
+        defaults = {
+            "root": root,
+            "pattern": pattern,
+            "dapi_ch": dapi_ch,
+            "o4_ch": o4_ch,
+            "edu_ch": edu_ch,
+            "dapi_gamma": dapi_gamma,
+            "o4_gamma": o4_gamma,
+            "edu_gamma": edu_gamma,
+            "debug": debug
+            }
+
+        filename = "defaults.json"
+        with open(filename, "w") as f:
+            json.dump(defaults, f)
+        print("New defaults saved")
+
         
