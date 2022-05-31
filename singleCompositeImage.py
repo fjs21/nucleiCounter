@@ -583,3 +583,40 @@ class singleCompositeImage():
         fig.suptitle('Gamma Correction')
         fig.tight_layout()
         plt.show()
+
+
+    def countEdUchannel(self, export_pdf):
+        """ EdU count code from testFolder_EdU.py"""
+
+        """ EdU count. """
+        EdU = self.proccessNuclearImage(
+            self.images[self.EdU_ch], 
+            gamma = self.EdU_gamma)
+        # sCI.threshold_method = thres
+        EdU_thresh = self.imageThreshold(
+            EdU, 
+            threshold_method = 'th2', 
+            blocksize = 23,
+            C = 10,
+            debug = self.debug)
+    
+        EdU_count, EdU_output, EdU_mask, EdU_watershed, EdU_markers = self.thresholdSegmentation(EdU_thresh, EdU, debug = self.debug)
+        EdU_DAPI_overlap = cv.bitwise_and(self.nucleiMask, EdU_mask)
+        ret,EdU_DAPI_markers = cv.connectedComponents(EdU_DAPI_overlap)
+        
+        self.edupos_count = EdU_DAPI_markers.max() # count does not use watershed step
+    
+        """ Generate a summary PDF to quickly review DAPI and EdU counts. """
+        EdU_centroid_x = EdU_output[3][1:,0].astype(int)
+        EdU_centroid_y = EdU_output[3][1:,1].astype(int)
+
+        plt.figure(figsize= (20,10))
+        plt.suptitle(f"{self.path}\\{self.imgFile}")
+        plt.subplot(1,2,1), plt.imshow(self.nucleiWatershed)
+        plt.subplot(1,2,1), plt.title(f"DAPI+: {self.nucleiCount}")
+        plt.subplot(1,2,2), plt.imshow(EdU_watershed)
+        plt.subplot(1,2,2), plt.scatter(self.centroid_x,self.centroid_y,s=0.5)
+        plt.subplot(1,2,2), plt.scatter(EdU_centroid_x,EdU_centroid_y,c="yellow",s=0.5)
+        plt.subplot(1,2,2), plt.title(f"EdU+DAPI+: {self.edupos_count}")
+        export_pdf.savefig(dpi=300)
+        plt.close()

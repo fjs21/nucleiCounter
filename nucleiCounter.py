@@ -307,7 +307,7 @@ class Application(tk.Frame):
                         sCI.processPredictions(export_pdf)
 
                     if (edu_ch != None):
-                        self.countEdUchannel(sCI, edu_ch, edu_gamma, debug)
+                        sCI.countEdUchannel(export_pdf)
 
                     if debug:
                         sCI.reportResults()
@@ -321,17 +321,15 @@ class Application(tk.Frame):
 
                         self.console.update()                 
 
-                    if (o4_ch == None):
-                        results.append({
+                    result = {
                             'path': sCI.path,
                             'imgFile': sCI.imgFile,
                             # 'stage': stage,
                             # 'well': well,
                             # 'position': position,
-                            'nucleiCount': sCI.nucleiCount,
-                            })
+                            'nucleiCount': sCI.nucleiCount,}
 
-                    elif (o4_ch != None):
+                    if (o4_ch != None):
                         
                         if (sCI.o4pos_count+sCI.o4neg_count)>0:
                             o4_percentage = sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)
@@ -339,17 +337,15 @@ class Application(tk.Frame):
                             o4_percentage = 0
                             self.console.insert('end',f"Error calculating O4% in {sCI.imgFile}.")
 
-                        results.append({
-                            'path': sCI.path,
-                            'imgFile': sCI.imgFile,
-                            # 'stage': stage,
-                            # 'well': well,
-                            # 'position': position,
-                            'nucleiCount': sCI.nucleiCount,
-                            'o4pos_count': sCI.o4pos_count,
-                            'o4neg_count': sCI.o4neg_count,
-                            'o4%': "{:.2%}".format(o4_percentage),
-                            })
+                        result['o4pos_count'] = sCI.o4pos_count
+                        result['o4neg_count'] = sCI.o4neg_count
+                        result['o4%'] = "{:.2%}".format(o4_percentage)
+
+                    if (edu_ch != None):
+
+                        result['edupos_count'] = sCI.edupos_count
+
+                    results.append(result)
 
                     self.console.insert("end",f"\nCompleted '{imgFile}'. {currentFileNumber} of {fileNumber} files.")
                 except:
@@ -372,10 +368,9 @@ class Application(tk.Frame):
 
 
 
-
-
 # Starts application.
 root = tk.Tk()
+root.eval('tk::PlaceWindow . center')
 root.resizable(width=False, height=False)
 app = Application(master=root)
 app.mainloop()        
