@@ -143,3 +143,4 @@ cython_debug/
 *.xlsx
 *.pdf
 defaults.json
+.DS_Store

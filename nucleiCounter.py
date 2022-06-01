@@ -321,8 +321,11 @@ class Application(tk.Frame):
                 imgFile = file['name']
 
                 # parse file names
-                #stage, well, position = parseFileName(imgFile)
-                stage = None
+                try: 
+                    stage, well, position = parseFileName(imgFile)
+                except:
+                    print(f"\nCould not parseFileName '{path}'. Image: {imgFile}")                    
+                    stage = None
 
                 try:
                     sCI = singleCompositeImage(
