@@ -136,11 +136,15 @@ class singleCompositeImage():
     def scaleImages(self, scalefactor: float, debug=False):
         """Scale images."""
         print(f"Scaling image by {scalefactor}. Original size = {self.images[0].shape}")
+        images = []
         for i in range(len(self.images)):
-            # height = int(self.images[i].shape[0] * scalefactor)
-            # width = int(self.images[i].shape[1] * scalefactor)
-            # dim = (width, height)
-            self.images[i] = cv.resize(self.images[i], None, fx =scalefactor, fy = scalefactor, interpolation = cv.INTER_AREA)
+            height = int(self.images[i].shape[0] * scalefactor)
+            width = int(self.images[i].shape[1] * scalefactor)
+            dim = (width, height)
+            image = cv.resize(self.images[i], dim, interpolation = cv.INTER_CUBIC)
+            images.append(image)
+
+        self.images = tuple(images)
         print(f"New size = {self.images[0].shape}")
 
     def showImages(self, images, maintitle = 'Images', titles = '', cmap='gray'):
