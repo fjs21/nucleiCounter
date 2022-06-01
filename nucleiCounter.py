@@ -10,7 +10,7 @@ from tkinter.ttk import Progressbar
 from matplotlib.backends.backend_pdf import PdfPages
 
 # start JVM for compatibility with VSI files
-print('JAVA_HOME =', os.environ['JAVA_HOME'])
+#print('JAVA_HOME =', os.environ['JAVA_HOME'])
 import javabridge
 import bioformats
 javabridge.start_vm(class_path=bioformats.JARS)
@@ -321,7 +321,8 @@ class Application(tk.Frame):
                 imgFile = file['name']
 
                 # parse file names
-                stage, well, position = parseFileName(imgFile)
+                #stage, well, position = parseFileName(imgFile)
+                stage = None
 
                 try:
                     sCI = singleCompositeImage(
@@ -333,7 +334,7 @@ class Application(tk.Frame):
                         o4_gamma = o4_gamma,
                         EdU_ch = edu_ch,
                         EdU_gamma = edu_gamma,
-                        scalefactor = 1, 
+                        scalefactor = scalefactor, 
                         debug = debug)
                     sCI.processDAPI(threshold_method='th2') # based on manual counts (see OneNote)
 

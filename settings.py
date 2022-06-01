@@ -37,7 +37,7 @@ class Settings:
                 "o4_gamma": 1.0, 
                 "edu_gamma": 1.0, 
                 "scalefactor": 1.0,
-                "debug": true}
+                "debug": True}
 
         # Define folders for input of data
         self.folder_dicts = [

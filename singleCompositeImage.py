@@ -105,7 +105,7 @@ class singleCompositeImage():
         elif Path(fullpath).suffix == '.vsi':
             images = self.openBioformats()
         else:
-            print('Filetype: %s not recognized trying bioformats.', Path(fullpath).suffix)
+            print(f'Filetype: {Path(fullpath).suffix}%s not recognized trying bioformats.')
             images = self.openBioformats()
 
         if self.debug or debug:
@@ -133,15 +133,15 @@ class singleCompositeImage():
 
         return images
 
-    def scaleImages(self, scalefactor, debug=False):
+    def scaleImages(self, scalefactor: float, debug=False):
         """Scale images."""
-        print(self.images[0].shape, scalefactor)
+        print(f"Scaling image by {scalefactor}. Original size = {self.images[0].shape}")
         for i in range(len(self.images)):
-            height = int(self.images[i].shape[0] * scalefactor)
-            width = int(self.images[i].shape[1] * scalefactor)
-            dim = (width, height)
-            self.images[i] = cv.resize(self.images[i], dim, interpolation = cv.INTER_AREA)
-        print(self.images[0].shape)
+            # height = int(self.images[i].shape[0] * scalefactor)
+            # width = int(self.images[i].shape[1] * scalefactor)
+            # dim = (width, height)
+            self.images[i] = cv.resize(self.images[i], None, fx =scalefactor, fy = scalefactor, interpolation = cv.INTER_AREA)
+        print(f"New size = {self.images[0].shape}")
 
     def showImages(self, images, maintitle = 'Images', titles = '', cmap='gray'):
         """Show multiple images."""
