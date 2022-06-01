@@ -163,7 +163,7 @@ class singleCompositeImage():
             else:
                 fig.delaxes(ax)
         plt.tight_layout()
-        plt.suptitle("press 'Q' to move to next step\npress 'o' to Zoom-to-rect\npress 'r' to reset plot", verticalalignment="bottom")
+        plt.suptitle("press 'Q' to move to next step, press 'o' to Zoom-to-rect, press 'r' to reset plot", verticalalignment="bottom")
 
         fig = plt.gcf()
         fig.canvas.manager.set_window_title(maintitle)
