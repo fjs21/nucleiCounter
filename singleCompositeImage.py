@@ -121,7 +121,7 @@ class singleCompositeImage():
                 else:
                     titles.append(f'channel #{i}')
 
-            self.showImages(images, title = fullpath, titles = titles, 'Loaded Images')    
+            self.showImages(images, maintitle = self.imgFile, titles = titles)    
 
         return images
 
@@ -143,33 +143,29 @@ class singleCompositeImage():
             self.images[i] = cv.resize(self.images[i], dim, interpolation = cv.INTER_AREA)
         print(self.images[0].shape)
 
-    def showImages(self, images, maintitle = 'Images', titles='', suptitle=''):
-        # mng = plt.get_current_fig_manager()
-        # mng.full_screen_toggle()
+    def showImages(self, images, maintitle = 'Images', titles = ''):
+        """Show multiple images."""
 
-        # doesn't show both only most recent...
-        #plt.suptitle(suptitle)
-        # 
+        # determine number of rows and cols
         cols = int(len(images) // 2 + len(images) % 2)
         rows = int(len(images) // cols + len(images) % cols)
-        #plt.figure(figsize = (rows,cols))
-        # print("cells/rows",cols,rows)
+
         fig, axes = plt.subplots(rows,cols, sharex=True, sharey=True)
-        # for i in range(len(images)):
         for i, ax in enumerate(axes.flat):
             if i < len(images):
                 img = images[i]
-                # img = self.gammaCorrect(img)
                 img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
                 ax.imshow(img,'gray')
                 if titles != '':
                     ax.set_title(titles[i])
-                # plt.xticks([]),plt.yticks([])
             else:
                 fig.delaxes(ax)
         plt.tight_layout()
-        plt.figure(maintitle)
         plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
+        
+        fig = plt.gcf()
+        fig.canvas.manager.set_window_title(maintitle)
+
         plt.show()
 
     def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):
@@ -211,7 +207,7 @@ class singleCompositeImage():
         images = [img_blur, th1, th2, th3]
 
         if self.debug or debug:
-            self.showImages(images, titles)
+            self.showImages(images, maintitle = f"imageThresholds - {self.imgFile}", titles = titles)
 
         return cv.bitwise_not(eval(threshold_method))
 
@@ -265,7 +261,7 @@ class singleCompositeImage():
         images = [thresh, opening, dist_transform, sure_fg, unknown, img]
 
         if self.debug or debug:
-            self.showImages(images,titles)
+            self.showImages(images, maintitle = f"imageSegmentataion - {self.imgFile}", titles = titles)
 
         count = markers.max()-1
         output = cv.connectedComponentsWithStats(sure_fg)
@@ -335,7 +331,7 @@ class singleCompositeImage():
             if self.cell.shape==(self.width,self.height,3):
                 self.cells.append(self.cell)
                 if debug_once:
-                    self.showCell(i)
+                    self.showCell(i, cell_title=f"Found first cell @{self.centroids[i]}")
                     debug_once = False 
             else:
                 self.cells.append(0)
@@ -462,12 +458,14 @@ class singleCompositeImage():
             values, counts = np.unique(self.centroids_classification, return_counts=True)
             print(f"values, counts: {values, counts}\n")
 
-    def showCell(self, cell_index, title=''):
+    def showCell(self, cell_index:int, cell_title:str = ''):
         # print(self.cells[cell_index].shape)
         plt.imshow(self.cells[cell_index])
-        if title != '':
-            plt.title(title)
         plt.xticks([]),plt.yticks([])
+
+        fig = plt.gcf()
+        fig.canvas.manager.set_window_title(cell_title)
+
         plt.show()
 
     def saveCellImg(self, cell_index, filename):
@@ -496,6 +494,8 @@ class singleCompositeImage():
     def processPredictions(self, export_pdf, prediction_cutoff = 0.5, debug: bool=False):
         from matplotlib.patches import Rectangle
 
+        debug_once = debug or self.debug
+
         # bar width on plots to indicate which cells will not be counted
         width = self.settings.width/2
         height = self.settings.height/2
@@ -509,16 +509,16 @@ class singleCompositeImage():
                 # total_cellImages += 1
                 cell_type = self.classifyCell(i, prediction_cutoff)
                 if cell_type == 1:
-                    title='O4+'
                     self.o4pos_count += 1
                     cell_info[i,:] = [self.centroid_x[i], self.centroid_y[i], 1]
+                    # Show each positive cell with title label
+                    if debug_once:
+                        self.showCell(i, cell_title=f"Cell #{i} is O4+")
+                        debug_once = False  
                 else:
-                    title='O4-'
                     self.o4neg_count += 1
                     cell_info[i,:] = [self.centroid_x[i], self.centroid_y[i], 0]
-                # Show each cell with title label
-                if debug:
-                    self.showCell(i, title)
+  
         # Generate summary image
         plt.figure(figsize= (10,10))
         plt.imshow(self.rgb)

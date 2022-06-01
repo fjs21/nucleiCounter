@@ -340,7 +340,7 @@ class Application(tk.Frame):
                     if (o4_ch != None):
                         sCI.processCells()
                         sCI.getPredictions(model)
-                        sCI.processPredictions(export_pdf)
+                        sCI.processPredictions(export_pdf, debug = debug)
 
                     if (edu_ch != None):
                         sCI.countEdUchannel(export_pdf)
