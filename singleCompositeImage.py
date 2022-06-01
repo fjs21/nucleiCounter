@@ -143,21 +143,23 @@ class singleCompositeImage():
             self.images[i] = cv.resize(self.images[i], dim, interpolation = cv.INTER_AREA)
         print(self.images[0].shape)
 
-    def showImages(self, images, maintitle = 'Images', titles = ''):
+    def showImages(self, images, maintitle = 'Images', titles = '', cmap='gray'):
         """Show multiple images."""
 
+        # FigureManagerMac does not support full screen toggle
         plt.switch_backend('TkAgg')
 
         # determine number of rows and cols
         cols = int(len(images) // 2 + len(images) % 2)
         rows = int(len(images) // cols + len(images) % cols)
 
+        # plot each image in grid
         fig, axes = plt.subplots(rows,cols, sharex=True, sharey=True)
         for i, ax in enumerate(axes.flat):
             if i < len(images):
                 img = images[i]
                 img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-                ax.imshow(img, cmap='nipy_spectral')
+                ax.imshow(img, cmap=cmap)
                 if titles != '':
                     ax.set_title(titles[i])
             else:
@@ -165,16 +167,25 @@ class singleCompositeImage():
         plt.tight_layout()
         plt.suptitle("press 'Q' to move to next step, press 'o' to Zoom-to-rect, press 'r' to reset plot", verticalalignment="bottom")
 
+        # set title of window
         fig = plt.gcf()
         fig.canvas.manager.set_window_title(maintitle)
-        fig.canvas.manager.full_screen_toggle()
         
+        # retrieve details of screen
         window = fig.canvas.manager.window
         screen_y = window.winfo_screenheight()
         screen_x = window.winfo_screenwidth()
-        print(screen_y)
-        print(screen_x)
+
+        # set window size at 85% of screen
+        # from: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
+        px = 1/plt.rcParams['figure.dpi']
+        fig.set_size_inches(screen_x*0.85*px, screen_y*0.85*px)
+
+        # set position in fixed position in upper left
+        # from: https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with-matplotlib
+        window.wm_geometry("+%d+%d" % (100,100))
     
+        # show plot
         plt.show()
 
     def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):
