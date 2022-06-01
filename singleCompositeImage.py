@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import xml.etree.ElementTree as ET
 import math
-import os, errno
+import os, errno, platform
 from pathlib import Path
 
 # to enable VSI file support
@@ -146,6 +146,8 @@ class singleCompositeImage():
     def showImages(self, images, maintitle = 'Images', titles = ''):
         """Show multiple images."""
 
+        plt.switch_backend('TkAgg')
+
         # determine number of rows and cols
         cols = int(len(images) // 2 + len(images) % 2)
         rows = int(len(images) // cols + len(images) % cols)
@@ -155,17 +157,24 @@ class singleCompositeImage():
             if i < len(images):
                 img = images[i]
                 img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-                ax.imshow(img,'gray')
+                ax.imshow(img, cmap='nipy_spectral')
                 if titles != '':
                     ax.set_title(titles[i])
             else:
                 fig.delaxes(ax)
         plt.tight_layout()
-        plt.suptitle("press 'Q' to move to next step", verticalalignment="bottom")
-        
+        plt.suptitle("press 'Q' to move to next step\npress 'o' to Zoom-to-rect\npress 'r' to reset plot", verticalalignment="bottom")
+
         fig = plt.gcf()
         fig.canvas.manager.set_window_title(maintitle)
-
+        fig.canvas.manager.full_screen_toggle()
+        
+        window = fig.canvas.manager.window
+        screen_y = window.winfo_screenheight()
+        screen_x = window.winfo_screenwidth()
+        print(screen_y)
+        print(screen_x)
+    
         plt.show()
 
     def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):

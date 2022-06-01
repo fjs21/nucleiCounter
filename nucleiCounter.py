@@ -357,16 +357,20 @@ class Application(tk.Frame):
 
                         self.console.update()                 
 
+                    # report result of nuclei count
                     result = {
                             'path': sCI.path,
                             'imgFile': sCI.imgFile,
-                            # 'stage': stage,
-                            # 'well': well,
-                            # 'position': position,
-                            'nucleiCount': sCI.nucleiCount,}
+                            'nucleiCount': sCI.nucleiCount}
 
+                    # add details parsed from fileName
+                    if (stage != None):
+                        result['stage'] = stage
+                        result['well'] = well
+                        result['position'] = position
+
+                    # add O4 counts
                     if (o4_ch != None):
-                        
                         if (sCI.o4pos_count+sCI.o4neg_count)>0:
                             o4_percentage = sCI.o4pos_count/(sCI.o4pos_count+sCI.o4neg_count)
                         else:
@@ -377,8 +381,8 @@ class Application(tk.Frame):
                         result['o4neg_count'] = sCI.o4neg_count
                         result['o4%'] = "{:.2%}".format(o4_percentage)
 
+                    # add EdU counts
                     if (edu_ch != None):
-
                         result['edupos_count'] = sCI.edupos_count
 
                     results.append(result)
