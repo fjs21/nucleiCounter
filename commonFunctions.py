@@ -11,7 +11,8 @@ def fullPath(root, name='', binary=False):
             fullpath = '\\\\?\\'.encode('utf8','ignore') + os.path.join(os.getcwd().encode('utf8','ignore'),root,name)
     else:
         if platform.system() == 'Windows':
-            fullpath = '\\\\?\\' + os.path.join(os.getcwd(),root,name)
+            # fullpath = '\\\\?\\' + os.path.join(os.getcwd(),root,name)
+            fullpath = os.path.join(os.getcwd(),root,name)
         elif platform.system() == 'Darwin':
             fullpath = os.path.join(os.getcwd(),root,name)
         else:
