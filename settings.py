@@ -1,4 +1,5 @@
 import json
+import numpy as np 
 
 class Settings:
     """A class to store all settings."""
@@ -18,6 +19,11 @@ class Settings:
         # Keras Model
         self.kerasModel = 'o4counter_wAug_5.1.h5'
 
+        # Settings for thresholdSegmentation
+        self.opening_kernel = np.ones((3,3),np.uint8)
+        self.opening_iterations = 3
+        self.background_kernel = np.ones((3,3),np.uint8)
+        self.background_iterations = 3
 
         # Defaults
         filename = "defaults.json"

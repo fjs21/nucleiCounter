@@ -126,7 +126,7 @@ class singleCompositeImage():
         return images
 
     def openBioformats(self, debug: bool = False):
-        """Using bioformats to open .vsi image"""
+        """Using bioformats to open image"""
         fullpath = fullPath(self.path, self.imgFile)
         images = bioformats.load_image(fullpath, rescale=False)
         images = cv.split(images)
@@ -238,15 +238,26 @@ class singleCompositeImage():
     def thresholdSegmentation(self, 
         thresh, 
         img, 
-        opening_kernel = np.ones((3,3),np.uint8),
-        opening_iterations = 3, 
-        background_kernel = np.ones((3,3),np.uint8),
-        background_iterations = 3,
+        opening_kernel = None, 
+        opening_iterations = None, 
+        background_kernel = None,
+        background_iterations = None,
         debug=False):
         """SEGMENTATION and WATERSHED"""
+
+        # Read defaults from setting file
+        if opening_kernel == None:
+            opening_kernel = self.settings.opening_kernel
+        if opening_iterations == None:
+            opening_iterations = self.settings.opening_iterations
+        if background_kernel == None:
+            background_kernel = self.settings.background_kernel
+        if background_iterations == None:
+            background_iterations = self.settings.background_iterations
+
         # based on - https://docs.opencv.org/3.4/d3/db4/tutorial_py_watershed.html
         # 1. noise removal
-        # kernel = np.ones((3,3),np.uint8)
+        # default kernel = np.ones((3,3),np.uint8)
         opening = cv.morphologyEx(thresh, cv.MORPH_OPEN, opening_kernel, iterations= opening_iterations)
 
         # 2. sure background area
