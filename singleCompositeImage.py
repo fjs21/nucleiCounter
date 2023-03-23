@@ -1,9 +1,10 @@
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as et
 import math
-import os, errno, platform
+import os
+import errno
 from pathlib import Path
 
 # to enable VSI file support
@@ -16,10 +17,58 @@ from settings import Settings
 from commonFunctions import fullPath
 
 
-class singleCompositeImage():
+def showImages(images, maintitle='Images', titles=None, cmap='gray'):
+    """Show multiple images."""
+
+    # FigureManagerMac does not support full screen toggle
+    plt.switch_backend('TkAgg')
+
+    # determine number of rows and cols
+    cols = int(len(images) // 2 + len(images) % 2)
+    rows = int(len(images) // cols + len(images) % cols)
+
+    # plot each image in grid
+    fig, axes = plt.subplots(rows, cols, sharex=True, sharey=True)
+    for i, ax in enumerate(axes.flat):
+        if i < len(images):
+            img = images[i]
+            img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+            ax.imshow(img, cmap=cmap)
+            if titles is list:
+                ax.set_title(titles[i])
+        else:
+            fig.delaxes(ax)
+    plt.tight_layout()
+    plt.suptitle("press 'Q' to move to next step, press 'o' to Zoom-to-rect, press 'r' to reset plot",
+                 verticalalignment="bottom")
+
+    # set title of window
+    fig = plt.gcf()
+    fig.canvas.manager.set_window_title(maintitle)
+
+    # retrieve details of screen
+    window = fig.canvas.manager.window
+    screen_y = window.winfo_screenheight()
+    screen_x = window.winfo_screenwidth()
+
+    # set window size at 85% of screen
+    # from: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
+    px = 1 / plt.rcParams['figure.dpi']
+    fig.set_size_inches(screen_x * 0.85 * px, screen_y * 0.85 * px)
+
+    # set position in fixed position in upper left from:
+    # https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with
+    # -matplotlib
+    window.wm_geometry("+%d+%d" % (100, 100))
+
+    # show plot
+    plt.show()
+
+
+class singleCompositeImage:
 
     def __init__(
-            self: str,
+            self,
             path: str,
             imgFile: str,
             dapi_ch: int,
@@ -33,6 +82,34 @@ class singleCompositeImage():
             # to take into account different magnifications across images and training set
             scalefactor: float = 1,
             debug: bool = False):
+
+        self.gfappos_count = None
+        self.edupos_count = None
+        self.o4neg_count = None
+        self.o4pos_count = None
+        self.NN = None
+        self.fd = None
+        self.centroids_classification = None
+        self.markers = None
+        self.cell = None
+        self.cells = None
+        self.predictions = None
+        self.markers_XY = None
+        self.marker_index = None
+        self.markerFile = None
+        self.height = None
+        self.width = None
+        self.centroid_y = None
+        self.centroid_x = None
+        self.centroids = None
+        self.nucleiMarkers = None
+        self.nucleiWatershed = None
+        self.nucleiMask = None
+        self.nucleiCount = None
+        self.output = None
+        self.nucleiThresh = None
+        self.threshold_method = None
+        self.nucleiImg = None
 
         self.debug = debug
 
@@ -58,18 +135,18 @@ class singleCompositeImage():
         self.images = self.loadImages()
         # standardize scale
         if self.scalefactor != 1:
-            self.scaleImages(scalefactor=scalefactor, debug=self.debug)
+            self.scaleImages(scalefactor=scalefactor)
         # get color image for export
-        if (self.o4_ch is None):
-            if (self.EdU_ch is not None):
-                if (self.gfap_ch is not None):
+        if self.o4_ch is None:
+            if self.EdU_ch is not None:
+                if self.gfap_ch is not None:
                     self.rgb = self.colorImage(blue=self.images[self.dapi_ch], red=self.images[self.EdU_ch],
                                                green=self.images[self.gfap_ch])
                 else:
                     self.rgb = self.colorImage(blue=self.images[self.dapi_ch], red=self.images[self.EdU_ch])
             else:
                 self.rgb = self.colorImage(blue=self.images[self.dapi_ch])
-        elif (self.o4_ch is not None):
+        elif self.o4_ch is not None:
             self.rgb = self.colorImage(blue=self.images[self.dapi_ch], green=self.images[self.o4_ch])
 
     def processDAPI(self, threshold_method: str, gamma: float = -1, blocksize=11, C=2, opening_iterations=3,
@@ -77,7 +154,7 @@ class singleCompositeImage():
         """ Process DAPI channel. """
 
         # if DAPI gamma not set, use global gamma setting
-        if (gamma == -1):
+        if gamma == -1:
             gamma = self.dapi_gamma
 
         self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
@@ -85,8 +162,9 @@ class singleCompositeImage():
         self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, blocksize=blocksize, C=C,
                                                 debug=debug)
 
-        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = self.thresholdSegmentation(
-            self.nucleiThresh, self.nucleiImg, opening_iterations=opening_iterations, debug=debug)
+        self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = \
+            self.thresholdSegmentation(
+                self.nucleiThresh, self.nucleiImg, opening_iterations=opening_iterations, debug=debug)
         self.centroids = self.output[3][1:, ]
         self.centroid_x = self.centroids[:, 0].astype(int)
         self.centroid_y = self.centroids[:, 1].astype(int)
@@ -105,7 +183,7 @@ class singleCompositeImage():
         self.readMarkers(debug)
         # filter markers_X and markers_Y based on markers_type == 2
         self.markers_XY = self.markers[self.markers[:, 2] == self.marker_index, :2]
-        # find nearest cells to each marker
+        # find the nearest cells to each marker
         self.findNearestNeighbors(debug)
         # assign markers to cells
         self.assignMarkersToCells(debug)
@@ -127,20 +205,20 @@ class singleCompositeImage():
             print(f"Loaded '{self.imgFile}' from '{self.path}'\n with {len(images)} channels.")
             titles = []
             for i in range(len(images)):
-                if (i == self.dapi_ch):
+                if i == self.dapi_ch:
                     titles.append('DAPI')
-                elif (i == self.o4_ch):
+                elif i == self.o4_ch:
                     titles.append('O4')
-                elif (i == self.EdU_ch):
+                elif i == self.EdU_ch:
                     titles.append('EdU')
                 else:
                     titles.append(f'channel #{i}')
 
-            self.showImages(images, maintitle=self.imgFile, titles=titles)
+            showImages(images, titles=titles, maintitle=self.imgFile)
 
         return images
 
-    def openBioformats(self, debug: bool = False):
+    def openBioformats(self):
         """Using bioformats to open image"""
         fullpath = fullPath(self.path, self.imgFile)
         images = bioformats.load_image(fullpath, rescale=False)
@@ -148,7 +226,7 @@ class singleCompositeImage():
 
         return images
 
-    def scaleImages(self, scalefactor: float, debug=False):
+    def scaleImages(self, scalefactor: float):
         """Scale images."""
         print(f"Scaling image by {scalefactor}. Original size = {self.images[0].shape}")
         images = []
@@ -162,58 +240,8 @@ class singleCompositeImage():
         self.images = tuple(images)
         print(f"New size = {self.images[0].shape}")
 
-    def showImages(self, images, maintitle='Images', titles='', cmap='gray'):
-        """Show multiple images."""
-
-        # FigureManagerMac does not support full screen toggle
-        plt.switch_backend('TkAgg')
-
-        # determine number of rows and cols
-        cols = int(len(images) // 2 + len(images) % 2)
-        rows = int(len(images) // cols + len(images) % cols)
-
-        # plot each image in grid
-        fig, axes = plt.subplots(rows, cols, sharex=True, sharey=True)
-        for i, ax in enumerate(axes.flat):
-            if i < len(images):
-                img = images[i]
-                img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-                ax.imshow(img, cmap=cmap)
-                if titles != '':
-                    ax.set_title(titles[i])
-            else:
-                fig.delaxes(ax)
-        plt.tight_layout()
-        plt.suptitle("press 'Q' to move to next step, press 'o' to Zoom-to-rect, press 'r' to reset plot",
-                     verticalalignment="bottom")
-
-        # set title of window
-        fig = plt.gcf()
-        fig.canvas.manager.set_window_title(maintitle)
-
-        # retrieve details of screen
-        window = fig.canvas.manager.window
-        screen_y = window.winfo_screenheight()
-        screen_x = window.winfo_screenwidth()
-
-        # set window size at 85% of screen
-        # from: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
-        px = 1 / plt.rcParams['figure.dpi']
-        fig.set_size_inches(screen_x * 0.85 * px, screen_y * 0.85 * px)
-
-        # set position in fixed position in upper left
-        # from: https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with-matplotlib
-        window.wm_geometry("+%d+%d" % (100, 100))
-
-        # show plot
-        plt.show()
-
-    def proccessNuclearImage(self, img, gamma: float = -1, debug: bool = False):
-        """Function to proccess a flourescence image with nuclear localized signal (e.g. DAPI)."""
-
-        # gamma correct - load glbbal setting if not set by parameter
-        if gamma == -1:
-            gamma = self.gamma
+    def proccessNuclearImage(self, img, gamma: float = 1, debug: bool = False):
+        """Function to process a fluorescence image with nuclear localized signal (e.g. DAPI)."""
 
         if gamma != 1:
             if debug:
@@ -247,7 +275,7 @@ class singleCompositeImage():
         images = [img_blur, th1, th2, th3]
 
         if self.debug or debug:
-            self.showImages(images, maintitle=f"imageThresholds - {self.imgFile}", titles=titles)
+            showImages(images, maintitle=f"imageThresholds - {self.imgFile}", titles=titles)
 
         return cv.bitwise_not(eval(threshold_method))
 
@@ -262,13 +290,13 @@ class singleCompositeImage():
         """SEGMENTATION and WATERSHED"""
 
         # Read defaults from setting file
-        if opening_kernel == None:
+        if opening_kernel is None:
             opening_kernel = self.settings.opening_kernel
-        if opening_iterations == None:
+        if opening_iterations is None:
             opening_iterations = self.settings.opening_iterations
-        if background_kernel == None:
+        if background_kernel is None:
             background_kernel = self.settings.background_kernel
-        if background_iterations == None:
+        if background_iterations is None:
             background_iterations = self.settings.background_iterations
 
         # based on - https://docs.opencv.org/3.4/d3/db4/tutorial_py_watershed.html
@@ -313,22 +341,16 @@ class singleCompositeImage():
         images = [thresh, opening, dist_transform, sure_fg, unknown, img]
 
         if self.debug or debug:
-            self.showImages(images, maintitle=f"imageSegmentation - {self.imgFile}", titles=titles)
+            showImages(images, maintitle=f"imageSegmentation - {self.imgFile}", titles=titles)
 
         count = markers.max() - 1
         output = cv.connectedComponentsWithStats(sure_fg)
 
-        return ([count, output, sure_fg, img, markers])
+        return [count, output, sure_fg, img, markers]
 
     # other functions of potential interest - findContours
     # NEXT FILTER ON SIZE, CIRCULARITY - GET X-Y centroid
     # https://www.learnopencv.com/blob-detection-using-opencv-python-c/ - for circularity
-
-    def showCentroids(self):
-        """Show centroids side-by-side with image."""
-        plt.subplot(1, 2, 1), plt.imshow(img, 'gray')
-        plt.subplot(1, 2, 2), plt.scatter(centroid_x, -centroid_y)
-        plt.show()
 
     def colorImage(self, blue, green='', red='', gamma: float = -1):
         """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
@@ -390,7 +412,7 @@ class singleCompositeImage():
 
     def readMarkers(self, debug=False):
         fullpath = fullPath(self.path, self.markerFile)
-        root = ET.parse(fullpath).getroot()
+        root = et.parse(fullpath).getroot()
 
         # Define marker X, Y, and type
         markers_X = []
@@ -426,7 +448,8 @@ class singleCompositeImage():
         plt.show()
 
     # CODE FOR CALCULATION OF NEAREST NEIGHBORS
-    def p2p_distance(self, p1, p2):
+    @staticmethod
+    def p2p_distance(p1, p2):
         """Find distance between two points in 2D space."""
         v = np.array(p2) - np.array(p1)
         v = abs(v)
@@ -438,9 +461,9 @@ class singleCompositeImage():
         """Returns an array of distances between two sets of points. (p1_index, p2_index, d). """
         fD = np.zeros((sources.shape[0], targets.shape[0]))
         for i in range(sources.shape[0]):
-            p1 = sources[i,]
+            p1 = sources[i, ]
             for j in range(targets.shape[0]):
-                p2 = targets[j,]
+                p2 = targets[j, ]
                 d = self.p2p_distance(p1, p2)
                 fD[i, j] = d
         return fD
@@ -448,13 +471,13 @@ class singleCompositeImage():
     def findNearestNeighbors(self, debug=False):
         self.fd = self.findDistances(self.centroids, self.markers_XY)
 
-        fd_mins = np.amin(self.fd, axis=1)
+        # fd_mins = np.amin(self.fd, axis=1)
         result = np.argmin(self.fd, axis=1)
         if debug or self.debug:
             print(f"Assignment of each centroid to nearest marker: {result}")
 
-            # distance of each marker to nearest centroid - used for classification
-        fd_mins_c = np.amin(self.fd, axis=0)
+            # distance of each marker to the nearest centroid - used for classification
+        # fd_mins_c = np.amin(self.fd, axis=0)
         result_c = np.argmin(self.fd, axis=0)
         if debug or self.debug:
             print(f"assignment of each marker to nearest centroid: {result_c}")
@@ -471,7 +494,8 @@ class singleCompositeImage():
                 self.centroids_classification[self.NN[i]] = 1  # set to O4+
                 if debug_once and not isinstance(self.cells[self.NN[i]], int):
                     print(f"{i}: marker_XY={self.markers_XY[i,]}, ",
-                          f"nearest centroid#={self.NN[i]}, at ({self.centroids[self.NN[i]]}), d={self.fd[self.NN[i], i]}")
+                          f"nearest centroid#={self.NN[i]}, at ({self.centroids[self.NN[i]]}), ",
+                          f"d={self.fd[self.NN[i], i]}")
                     self.showCell(self.NN[i], 'An example O4+ cell')
                     debug_once = False
         # check if cell is not usable as image to close to edge - assign to -1
@@ -599,7 +623,8 @@ class singleCompositeImage():
         export_pdf.savefig()
         plt.close()
 
-    def gammaCorrect(self, image, gamma: float = -1):
+    @staticmethod
+    def gammaCorrect(image, gamma: float = -1):
         """Gamma correct."""
         if gamma == -1:
             return image
@@ -612,9 +637,6 @@ class singleCompositeImage():
 
     def plotHistogram(self, image, gamma: float = -1):
         """Plot a histogram of an image."""
-        if gamma == -1:
-            gamma = self.gamma
-
         fig = plt.figure()
 
         img = cv.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
@@ -681,8 +703,9 @@ class singleCompositeImage():
         export_pdf.savefig(dpi=300)
         plt.close()
 
-    def rolling_ball_subtraction(self, original_image, radius=50, debug: bool = False):
-        # Define rolling ball subtraction function
+    @staticmethod
+    def rolling_ball_subtraction(original_image, radius=50, debug: bool = False):
+        """ Perform rolling ball subtraction function. """
 
         # original_image = util.img_as_float(original_image)
 
@@ -705,17 +728,18 @@ class singleCompositeImage():
         img = np.subtract(original_image, background_blur)
 
         if debug:
-            self.showImages([original_image, blur, background_blur, img])
+            showImages([original_image, blur, background_blur, img])
 
         return img
 
     def countGfapchannel(self, export_pdf):
-        """ Gfap count code  from test_GFAP.py"""
+        """ Gfap count code modified from test_GFAP.py"""
 
         gfap_image = self.rolling_ball_subtraction(self.images[self.gfap_ch])
         # sCI.showImages([sCI.colorImage(blue=sCI.images[3], red=sCI.images[1], green=sCI.images[2]), gfap_image])
 
-        img = cv.normalize(src=self.images[self.gfap_ch], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        img = cv.normalize(src=self.images[self.gfap_ch], dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX,
+                           dtype=cv.CV_8U)
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         img[self.nucleiMarkers == -1] = [0, 255, 0]
 
@@ -741,7 +765,7 @@ class singleCompositeImage():
             plt.hist(gfap_intensities, bins=50)
             plt.show()
 
-            self.showImages([self.rgb,  img])
+            showImages([self.rgb, img])
 
         self.gfappos_count = gfap_count
 

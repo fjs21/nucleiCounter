@@ -1,17 +1,18 @@
 import json
-import numpy as np 
+import numpy as np
+
 
 class Settings:
     """A class to store all settings."""
 
     def __init__(self):
         """Initialize static settings."""
-        
+
         # Define size of individual cell images
         self.width = 128
         self.height = 128
 
-        self.dotColors = ['orange','cyan']
+        self.dotColors = ['orange', 'cyan']
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
@@ -20,9 +21,9 @@ class Settings:
         self.kerasModel = 'o4counter_wAug_5.1.h5'
 
         # Settings for thresholdSegmentation
-        self.opening_kernel = np.ones((3,3),np.uint8)
+        self.opening_kernel = np.ones((3, 3), np.uint8)
         self.opening_iterations = 3
-        self.background_kernel = np.ones((3,3),np.uint8)
+        self.background_kernel = np.ones((3, 3), np.uint8)
         self.background_iterations = 3
 
         # Defaults
@@ -34,14 +35,14 @@ class Settings:
         except FileNotFoundError:
             print("Defaults not found")
             self.defaults = {
-                "root": "/Users/frasersim/Desktop/2022-03-04 (Evans OKN & Noggin plate)", 
-                "pattern": "*.vsi", 
-                "dapi_ch": 0, 
-                "o4_ch": -1, 
+                "root": "/Users/frasersim/Desktop/2022-03-04 (Evans OKN & Noggin plate)",
+                "pattern": "*.vsi",
+                "dapi_ch": 0,
+                "o4_ch": -1,
                 "edu_ch": -1,
                 "gfap_ch": -1,
-                "dapi_gamma": 1.0, 
-                "o4_gamma": 1.0, 
+                "dapi_gamma": 1.0,
+                "o4_gamma": 1.0,
                 "edu_gamma": 1.0,
                 "gfap_th": 1000,
                 "scalefactor": 1.0,
@@ -61,9 +62,9 @@ class Settings:
                 # which channel is O4?
                 'o4_ch': None,
                 # which channel is EdU?
-                'EdU_ch': None,                
+                'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
             },
             {
                 # name: folder 1        
@@ -79,10 +80,10 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma and treshold method
                 'gamma': 0.5,
-                'thres': 'th2',            },        
+                'thres': 'th2', },
             {
                 # name: folder 2        
                 'name': 'Jackie Transwell and IGFBP2 experiment',
@@ -97,10 +98,10 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': 1,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma and treshold method
                 'gamma': 1.0,
-                'thres': 'th2',            },
+                'thres': 'th2', },
             {
                 # name: folder 3        
                 'name': 'Roopa Feb 2020 BK experiment',
@@ -113,12 +114,12 @@ class Settings:
                 # which channel is O4?
                 'o4_ch': 2,
                 # which channel is EdU?
-                'EdU_ch': None,                
+                'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma and treshold method
                 'gamma': 0.5,
-                'thres': 'th2',            },  
+                'thres': 'th2', },
             {
                 # name: folder 4        
                 'name': 'Roopa July 2020 BK experiment (Discard)',
@@ -133,7 +134,7 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma
                 'gamma': 0.5,
                 'thres': 'th2',
@@ -152,7 +153,7 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': 1,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma
                 'gamma': 3.5,
                 'thres': 'th2',
@@ -173,7 +174,7 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold                
                 'thres': 'th2',
             },
@@ -192,7 +193,7 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set gamma
                 'gamma': 1,
                 'thres': 'th2',
@@ -207,14 +208,14 @@ class Settings:
                 'pattern': '*.vsi',
                 # which channel is DAPI?
                 'dapi_ch': 0,
-                'dapi_gamma': 1.0,                
+                'dapi_gamma': 1.0,
                 # which channel is O4?
                 'o4_ch': None,
-                'o4_gamma': 1,                   
+                'o4_gamma': 1,
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
@@ -234,17 +235,17 @@ class Settings:
                 'dapi_gamma': 1.0,
                 # which channel is O4?
                 'o4_ch': None,
-                'o4_gamma': 1,                
+                'o4_gamma': 1,
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
-            },                     
+            },
             {
                 # name: folder 10
                 'name': "Migration Assay (Experiment 3) - DAPI/GFP/A594 transwell images",
@@ -262,7 +263,7 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
@@ -286,14 +287,14 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
             },
-           {
+            {
                 # name: folder 12
                 'name': "Migration Assay (Experiment 5) - DAPI/GFP/A594 transwell images",
                 # root: path to folder
@@ -310,14 +311,14 @@ class Settings:
                 # which channel is EdU?
                 'EdU_ch': None,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
-            },            
-           {
+            },
+            {
                 # name: folder 13
                 'name': "Transwell experiment Jan 2021",
                 # root: path to folder
@@ -334,14 +335,14 @@ class Settings:
                 'EdU_ch': 1,
                 'EdU_gamma': 1.0,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
-            },           
-           {
+            },
+            {
                 # name: folder 14
                 'name': "Transwell experiment Feb 2021",
                 # root: path to folder
@@ -358,14 +359,14 @@ class Settings:
                 'EdU_ch': 1,
                 'EdU_gamma': 1.0,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
             },
-           {
+            {
                 # name: folder 15
                 'name': "IGFBP2 antibody experiment",
                 # root: path to folder
@@ -382,7 +383,7 @@ class Settings:
                 'EdU_ch': 1,
                 'EdU_gamma': 1.0,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
@@ -406,7 +407,7 @@ class Settings:
                 'EdU_ch': 1,
                 'EdU_gamma': 1.0,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
@@ -430,27 +431,27 @@ class Settings:
                 'EdU_ch': None,
                 'EdU_gamma': 1.0,
                 # which marker counts the O4 counts
-                'marker_index' : None,
+                'marker_index': None,
                 # set threshold method
                 'thres': 'th2',
                 # settings for autoFL channel
                 'autoFL_dilate': False,
                 'autoFL_gamma': 1,
-            },        ]
+            }, ]
 
-    def updateDefaults(self,
-        root:str, 
-        pattern:str, 
-        dapi_ch:int, 
-        o4_ch:int, 
-        edu_ch:int = None,
-        gfap_ch:int = None,
-        dapi_gamma:float = 1.0, 
-        o4_gamma:float = 1.0, 
-        edu_gamma:float = 1.0,
-        gfap_th:int = 1000,
-        scalefactor:float = 1.0,
-        debug: bool = False):
+    @staticmethod
+    def updateDefaults(root: str,
+                       pattern: str,
+                       dapi_ch: int,
+                       o4_ch: int,
+                       edu_ch: int = None,
+                       gfap_ch: int = None,
+                       dapi_gamma: float = 1.0,
+                       o4_gamma: float = 1.0,
+                       edu_gamma: float = 1.0,
+                       gfap_th: int = 1000,
+                       scalefactor: float = 1.0,
+                       debug: bool = False):
         """ Save defaults to temporary file. """
 
         defaults = {
@@ -466,11 +467,9 @@ class Settings:
             "gfap_th": gfap_th,
             "scalefactor": scalefactor,
             "debug": debug
-            }
+        }
 
         filename = "defaults.json"
         with open(filename, "w") as f:
             json.dump(defaults, f)
         print("New defaults saved")
-
-        

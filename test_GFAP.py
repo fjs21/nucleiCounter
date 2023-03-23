@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-from singleCompositeImage import singleCompositeImage
+from singleCompositeImage import singleCompositeImage, showImages
 
 dirname = os.path.dirname(file)
 basename = os.path.basename(file)
@@ -94,7 +94,7 @@ for i in range(2, np.max(sCI.nucleiMarkers) ):
         # positive cell
         img[sCI.nucleiMarkers == i] = [255,0,0]
 
-sCI.showImages([sCI.colorImage(blue=sCI.images[3], red=sCI.images[1], green=sCI.images[2]),
+showImages([sCI.colorImage(blue=sCI.images[3], red=sCI.images[1], green=sCI.images[2]),
                 img])
 
 plt.hist(gfap_intensities, bins=50)
