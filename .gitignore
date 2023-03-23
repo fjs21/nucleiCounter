@@ -144,3 +144,8 @@ cython_debug/
 *.pdf
 defaults.json
 .DS_Store
+.idea/vcs.xml
+.idea/nucleiCounter.iml
+.idea/modules.xml
+.idea/misc.xml
+.idea/inspectionProfiles/profiles_settings.xml
