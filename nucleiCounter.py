@@ -92,12 +92,24 @@ class Application(tk.Frame):
             font = tkFont.Font(family="Calibri", size=12))
 
         l10 = tk.Label(self.top_frame,
-            text = """9. Scalefactor = """,
+            text = """9. Which image slice contains the Gfap image?""",
             justify = tk.LEFT,
             anchor = 'w',
             font = tkFont.Font(family="Calibri", size=12))
 
         l11 = tk.Label(self.top_frame,
+            text = """10. Gfap threshold = """,
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l12 = tk.Label(self.top_frame,
+            text = """11. Scalefactor = """,
+            justify = tk.LEFT,
+            anchor = 'w',
+            font = tkFont.Font(family="Calibri", size=12))
+
+        l13 = tk.Label(self.top_frame,
             text = """Enable debug?""",
             anchor = 'e',
             font = tkFont.Font(family="Calibri", size=12))
@@ -113,6 +125,8 @@ class Application(tk.Frame):
         l9.grid(row = 5, column = 2, sticky = 'w', pady = 2)
         l10.grid(row = 6, column = 0, sticky = 'w', pady = 2)
         l11.grid(row = 6, column = 2, sticky = 'w', pady = 2)
+        l12.grid(row = 7, column = 0, sticky = 'w', pady = 2)
+        l13.grid(row = 7, column = 2, sticky = 'w', pady = 2)
 
         e1 = tk.Frame(self.top_frame)
         
@@ -168,16 +182,28 @@ class Application(tk.Frame):
         e8 = tk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
             font = tkFont.Font(family="Calibri", size=12))
 
+        # set Gfap channel
+        gfap_ch = tk.IntVar()
+        gfap_ch.set(settings.defaults["gfap_ch"])
+        e9 = tk.Entry(self.top_frame, width=20, textvariable=gfap_ch,
+            font = tkFont.Font(family="Calibri", size=12))
+
+        # set Gfap threshold
+        gfap_th = tk.IntVar()
+        gfap_th.set(settings.defaults["gfap_th"])
+        e10 = tk.Entry(self.top_frame, width=20, textvariable=gfap_th,
+            font = tkFont.Font(family="Calibri", size=12))
+
         # set scalefactor
         scalefactor = tk.DoubleVar()
         scalefactor.set(settings.defaults["scalefactor"])
-        e9 = tk.Entry(self.top_frame, width=20, textvariable=scalefactor,
+        e11 = tk.Entry(self.top_frame, width=20, textvariable=scalefactor,
             font = tkFont.Font(family="Calibri", size=12))
 
         # debug mode?
         debug = tk.BooleanVar()
         debug.set(settings.defaults["debug"])
-        e10 = tk.Checkbutton(self.top_frame, text='', variable=debug,
+        e12 = tk.Checkbutton(self.top_frame, text='', variable=debug,
             onvalue=True, offvalue=False,
             anchor='w')
 
@@ -189,8 +215,10 @@ class Application(tk.Frame):
         e6.grid(row = 4, column = 3, sticky = 'w', pady = 2)
         e7.grid(row = 5, column = 1, sticky = 'w', pady = 2)
         e8.grid(row = 5, column = 3, sticky = 'w', pady = 2)
-        e9.grid(row = 6, column = 1, sticky = 'w', pady = 2)
-        e10.grid(row = 6, column = 3, columnspan = 3, sticky = 'w', pady = 2)
+        e9.grid(row=6, column=1, sticky='w', pady=2)
+        e10.grid(row=6, column=3, sticky='w', pady=2)
+        e11.grid(row = 7, column = 1, sticky = 'w', pady = 2)
+        e12.grid(row = 7, column = 3, columnspan = 3, sticky = 'w', pady = 2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -203,6 +231,8 @@ class Application(tk.Frame):
                 o4_gamma = o4_gamma.get(),
                 edu_ch = edu_ch.get(),
                 edu_gamma = edu_gamma.get(),
+                gfap_ch = gfap_ch.get(),
+                gfap_th = gfap_th.get(),
                 scalefactor = scalefactor.get(),
                 debug = debug.get()),
             font = tkFont.Font(family="Calibri", size=12))
@@ -240,10 +270,12 @@ class Application(tk.Frame):
         pattern:str, 
         dapi_ch:int, 
         o4_ch:int = -1, 
-        edu_ch:int = -1, 
+        edu_ch:int = -1,
+        gfap_ch:int = -1,
         dapi_gamma:float = 1.0, 
         o4_gamma:float = 1.0, 
-        edu_gamma:float = 1.0, 
+        edu_gamma:float = 1.0,
+        gfap_th:int = 1000,
         scalefactor:float = 1.0, 
         debug: bool = False):
 
@@ -256,10 +288,12 @@ class Application(tk.Frame):
             pattern, 
             dapi_ch, 
             o4_ch, 
-            edu_ch, 
+            edu_ch,
+            gfap_ch,
             dapi_gamma, 
             o4_gamma, 
-            edu_gamma, 
+            edu_gamma,
+            gfap_th,
             scalefactor,
             debug)
 
@@ -271,6 +305,10 @@ class Application(tk.Frame):
         if (edu_ch == -1):
             edu_ch = None
             self.console.insert("end", "\nSkipping EdU channel & analysis")
+
+        if (gfap_ch == -1):
+            gfap_ch = None
+            self.console.insert("end", "\nSkipping Gfap channel & analysis")
 
         # start analysis
         files = find(pattern, root)
@@ -337,6 +375,8 @@ class Application(tk.Frame):
                         o4_gamma = o4_gamma,
                         EdU_ch = edu_ch,
                         EdU_gamma = edu_gamma,
+                        gfap_ch = gfap_ch,
+                        gfap_th = gfap_th,
                         scalefactor = scalefactor, 
                         debug = debug)
                     sCI.processDAPI(threshold_method='th2') # based on manual counts (see OneNote)
@@ -349,6 +389,9 @@ class Application(tk.Frame):
                     if (edu_ch != None):
                         sCI.countEdUchannel(export_pdf)
 
+                    if (gfap_ch != None):
+                        sCI.countGfapchannel(export_pdf)
+
                     if debug:
                         sCI.reportResults()
                         self.console.insert('end', f"\nimgFile: {sCI.imgFile} found {sCI.nucleiCount} DAPI+ nuclei.")
@@ -359,6 +402,8 @@ class Application(tk.Frame):
                         if (edu_ch != None):
                             self.console.insert('end', f" EdU pos: {sCI.edupos_count}.")
 
+                        if (gfap_ch != None):
+                            self.console.insert('end', f" Gfap pos: {sCI.gfappos_count}.")
                         self.console.update()                 
 
                     # report result of nuclei count
@@ -388,6 +433,10 @@ class Application(tk.Frame):
                     # add EdU counts
                     if (edu_ch != None):
                         result['edupos_count'] = sCI.edupos_count
+
+                    # add Gfap counts
+                    if (gfap_ch != None):
+                        result['gfappos_count'] = sCI.gfappos_count
 
                     results.append(result)
 

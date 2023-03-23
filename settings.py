@@ -38,10 +38,12 @@ class Settings:
                 "pattern": "*.vsi", 
                 "dapi_ch": 0, 
                 "o4_ch": -1, 
-                "edu_ch": -1, 
+                "edu_ch": -1,
+                "gfap_ch": -1,
                 "dapi_gamma": 1.0, 
                 "o4_gamma": 1.0, 
-                "edu_gamma": 1.0, 
+                "edu_gamma": 1.0,
+                "gfap_th": 1000,
                 "scalefactor": 1.0,
                 "debug": True}
 
@@ -441,10 +443,12 @@ class Settings:
         pattern:str, 
         dapi_ch:int, 
         o4_ch:int, 
-        edu_ch:int = None, 
+        edu_ch:int = None,
+        gfap_ch:int = None,
         dapi_gamma:float = 1.0, 
         o4_gamma:float = 1.0, 
-        edu_gamma:float = 1.0, 
+        edu_gamma:float = 1.0,
+        gfap_th:int = 1000,
         scalefactor:float = 1.0,
         debug: bool = False):
         """ Save defaults to temporary file. """
@@ -455,9 +459,11 @@ class Settings:
             "dapi_ch": dapi_ch,
             "o4_ch": o4_ch,
             "edu_ch": edu_ch,
+            "gfap_ch": gfap_ch,
             "dapi_gamma": dapi_gamma,
             "o4_gamma": o4_gamma,
             "edu_gamma": edu_gamma,
+            "gfap_th": gfap_th,
             "scalefactor": scalefactor,
             "debug": debug
             }
