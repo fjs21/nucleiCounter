@@ -525,7 +525,7 @@ class singleCompositeImage:
         print(f"Shape = {self.images[self.dapi_ch].shape}, Bit depth = {self.images[self.dapi_ch].dtype}")
         print(f"Nuclei found: {self.nucleiCount}\n")
 
-        if hasattr(self, 'markerFile'):
+        if self.markerFile is not None:
             # Marker counter details
             print(f"Counter File: {self.markerFile} using marker #{self.marker_index}")
             # Summarize marker info
