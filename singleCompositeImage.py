@@ -7,6 +7,9 @@ import os
 import errno
 from pathlib import Path
 
+# to enable copying of cv2.merge objects
+import copy
+
 # to enable VSI file support
 import bioformats
 
@@ -91,7 +94,6 @@ class singleCompositeImage:
         self.fd = None
         self.centroids_classification = None
         self.markers = None
-        self.cell = None
         self.cells = None
         self.predictions = None
         self.markers_XY = None
@@ -353,7 +355,7 @@ class singleCompositeImage:
     # https://www.learnopencv.com/blob-detection-using-opencv-python-c/ - for circularity
 
     def colorImage(self, blue, green='', red='', gamma: float = -1):
-        """Creates color imnage showing O4 and DAPI in consistent way. Requires blue image"""
+        """Creates color image showing O4 and DAPI in consistent way. Requires blue image"""
 
         # Red channel     
         if isinstance(red, np.ndarray):
@@ -393,7 +395,10 @@ class singleCompositeImage:
         y_min = (centroid[1] - self.height / 2).astype(int)
         y_max = (centroid[1] + self.height / 2).astype(int)
         # print(x_min,x_max,y_min,y_max)
+        # x_min and y_min can be less than 0 which causes next line to return nothing, i.e. []
         cell = rgb[y_min:y_max, x_min:x_max, :]
+        # make a copy of the cell so image manipulation does not influence original rgb image
+        cell = copy.deepcopy(cell)
         return cell
 
     def getCells(self, debug=False):
@@ -401,9 +406,18 @@ class singleCompositeImage:
         self.cells = []
         debug_once = debug or self.debug
         for i in range(self.centroids.shape[0]):
-            self.cell = self.getCell(self.rgb, self.centroids[i])
-            if self.cell.shape == (self.width, self.height, 3):
-                self.cells.append(self.cell)
+            cell = self.getCell(self.rgb, self.centroids[i])
+            if cell.shape == (self.width, self.height, 3):
+                # if the cell is returned the matrix will have the correct dimensions
+                # in that case add to cells list
+
+                b, g, r = cv.split(cell)
+                # normalize blue & green channels within in each cell image
+                b = cv.normalize(src=b, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+                g = cv.normalize(src=g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+                cell = cv.merge((b, g, r))
+
+                self.cells.append(cell)
                 if debug_once:
                     self.showCell(i, cell_title=f"Found first cell @{self.centroids[i]}")
                     debug_once = False

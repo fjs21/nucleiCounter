@@ -14,7 +14,14 @@ from commonFunctions import *
 
 settings = Settings()
 
-# path = 'C:\\Users\\fjs21\\OneDrive\\Research&Lab\\Data\\Transwell Experiments 2020\\Image Data from Pilot Experiment' 
+# SET DEFAULT VALUES
+EdU_ch = None
+
+dapi_gamma = 1
+o4_gamma = 1
+thres = 'th2'
+
+# path = 'C:\\Users\\fjs21\\OneDrive\\Research&Lab\\Data\\Transwell Experiments 2020\\Image Data from Pilot Experiment'
 # imgFile = 'Post scrape on C2_C2-1_8365.tif' # Dapi in ch 1
 # dapi_ch = 0
 # o4_ch = None
@@ -29,7 +36,7 @@ settings = Settings()
 # gamma = True
 # thres = "th2"
 # model = loadKerasModel(settings.kerasModel)
-
+#
 # path = 'Y:\\People\\Ahmed\\Transwell Experiments\\Exp 3\\Proliferation\\Alone'
 # imgFile = 'Transwell 3_Multichannel_20190603_2939.vsi'
 # dapi_ch = 0
@@ -37,16 +44,24 @@ settings = Settings()
 # EdU_ch = 1
 # gamma = 3
 # thres = 'th2'
+#
+# path = 'Y:\\People\\Roopa\\dk si alpha expts\\siBK 0731 sample\\NC\\oxo'
+# path = '/Volumes/labdata/People/Roopa/dk si alpha expts/siBK 0731 sample/NC/oxo'
+# imgFile = 'siBK 07312019_C2-11_7321.vsi'
+# dapi_ch = 1
+# o4_ch = 2
+# EdU_ch = None
+# dapi_gamma = 0.5
+# o4_gamma = 0.2
+# thres = 'th2'
 
-path = 'Y:\\People\\Roopa\\dk si alpha expts\\siBK 0731 sample\\NC\\oxo'
-path = '/Volumes/labdata/People/Roopa/dk si alpha expts/siBK 0731 sample/NC/oxo'
-imgFile = 'siBK 07312019_C2-11_7321.vsi'
-dapi_ch = 1
-o4_ch = 2
-EdU_ch = None
-dapi_gamma = 0.5
-o4_gamma = 0.2
-thres = 'th2'
+path = '/Users/frasersim/Library/CloudStorage/Box-Box/NewLabData/People/Alexandria/Imaging/PV Density pilot/__O4 ' \
+       'analysis/'
+imgFile = 'DensityPilot_C2_ImageID-19569_Composite.tif'
+dapi_ch = 0
+o4_ch = 1
+o4_gamma = 1
+
 model = loadKerasModel(settings.kerasModel)
 
 # marker_index = 5
