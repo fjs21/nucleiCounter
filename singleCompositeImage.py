@@ -1,7 +1,8 @@
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
-import xml.etree.ElementTree as et
+# import xml.etree.ElementTree as et
+from lxml import etree
 import math
 import os
 import errno
@@ -170,6 +171,8 @@ class singleCompositeImage:
         self.centroids = self.output[3][1:, ]
         self.centroid_x = self.centroids[:, 0].astype(int)
         self.centroid_y = self.centroids[:, 1].astype(int)
+        # classification of cell type, setting all to -1 'not assigned'
+        self.centroids_classification = np.full(self.centroids.shape[0], -1)
 
     def processCells(self, debug=False):
         self.width = self.settings.width
@@ -183,12 +186,13 @@ class singleCompositeImage:
         self.marker_index = marker_index
         # get markers
         self.readMarkers(debug)
-        # filter markers_X and markers_Y based on markers_type == 2
-        self.markers_XY = self.markers[self.markers[:, 2] == self.marker_index, :2]
-        # find the nearest cells to each marker
-        self.findNearestNeighbors(debug)
-        # assign markers to cells
-        self.assignMarkersToCells(debug)
+        if self.markers is not None:
+            # filter markers_X and markers_Y based on markers_type == 2
+            self.markers_XY = self.markers[self.markers[:, 2] == self.marker_index, :2]
+            # find the nearest cells to each marker
+            self.findNearestNeighbors(debug)
+            # assign markers to cells
+            self.assignMarkersToCells(debug)
 
     def loadImages(self, debug: bool = False):
         """IMAGE LOADING"""
@@ -411,11 +415,11 @@ class singleCompositeImage:
                 # if the cell is returned the matrix will have the correct dimensions
                 # in that case add to cells list
 
-                b, g, r = cv.split(cell)
-                # normalize blue & green channels within in each cell image
-                b = cv.normalize(src=b, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-                g = cv.normalize(src=g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-                cell = cv.merge((b, g, r))
+                # b, g, r = cv.split(cell)
+                # # normalize blue & green channels within in each cell image
+                # b = cv.normalize(src=b, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+                # g = cv.normalize(src=g, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+                # cell = cv.merge((b, g, r))
 
                 self.cells.append(cell)
                 if debug_once:
@@ -426,7 +430,14 @@ class singleCompositeImage:
 
     def readMarkers(self, debug=False):
         fullpath = fullPath(self.path, self.markerFile)
-        root = et.parse(fullpath).getroot()
+        try:
+            # root = et.parse(fullpath).getroot()
+            tree = etree.parse(fullpath)
+            root = tree.getroot()
+        except etree.ParseError as e:
+            print(f"Failed to parse XML file - {self.markerFile}")
+            print("XML parsing error", e)
+            return
 
         # Define marker X, Y, and type
         markers_X = []
@@ -500,9 +511,11 @@ class singleCompositeImage:
 
     def assignMarkersToCells(self, debug=False):
         """Function to assign markers to specific cells"""
-        self.centroids_classification = np.zeros(self.centroids.shape[0])  # set all to O4-
+        # reset all cell classifications to o4-
+        self.centroids_classification = np.zeros(self.centroids.shape[0])
 
         debug_once = debug or self.debug
+
         for i in range(self.markers_XY.shape[0]):
             if self.fd[self.NN[i], i] < self.settings.fD_cutoff:
                 self.centroids_classification[self.NN[i]] = 1  # set to O4+
@@ -512,7 +525,8 @@ class singleCompositeImage:
                           f"d={self.fd[self.NN[i], i]}")
                     self.showCell(self.NN[i], 'An example O4+ cell')
                     debug_once = False
-        # check if cell is not usable as image to close to edge - assign to -1
+
+        # check if cell is not usable as cell image is too close to edge - assign to -1
         for i in range(self.centroids.shape[0]):
             if isinstance(self.cells[i], int):
                 self.centroids_classification[i] = -1

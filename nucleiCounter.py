@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 import tkinter.font as tkFont
 import tkinter.filedialog as fileDialog
 from tkinter.ttk import Progressbar
@@ -40,6 +41,10 @@ class Application(tk.Frame):
 
     def create_widgets(self):
         """Creates widgets on initial window."""
+        n1 = tk.Label(self.top_frame,
+                     text="""Experiment Name""",
+                     font=tkFont.Font(family="Calibri", size=14))
+
         l1 = tk.Label(self.top_frame,
                       text="""1. Select folder to process:""",
                       font=tkFont.Font(family="Calibri", size=12))
@@ -115,22 +120,50 @@ class Application(tk.Frame):
                        anchor='e',
                        font=tkFont.Font(family="Calibri", size=12))
 
-        l1.grid(row=0, column=0, sticky='w', pady=2)
-        l2.grid(row=1, column=0, sticky='w', pady=2)
-        l3.grid(row=2, column=0, sticky='w', pady=2)
-        l4.grid(row=3, column=0, sticky='w', pady=2)
-        l5.grid(row=3, column=2, sticky='w', pady=2)
-        l6.grid(row=4, column=0, sticky='w', pady=2)
-        l7.grid(row=4, column=2, sticky='w', pady=2)
-        l8.grid(row=5, column=0, sticky='w', pady=2)
-        l9.grid(row=5, column=2, sticky='w', pady=2)
-        l10.grid(row=6, column=0, sticky='w', pady=2)
-        l11.grid(row=6, column=2, sticky='w', pady=2)
-        l12.grid(row=7, column=0, sticky='w', pady=2)
-        l13.grid(row=7, column=2, sticky='w', pady=2)
+        n1.grid(row=0, column=0, sticky='w', pady=2)
+        l1.grid(row=1, column=0, sticky='w', pady=2)
+        l2.grid(row=2, column=0, sticky='w', pady=2)
+        l3.grid(row=3, column=0, sticky='w', pady=2)
+        l4.grid(row=4, column=0, sticky='w', pady=2)
+        l5.grid(row=4, column=2, sticky='w', pady=2)
+        l6.grid(row=5, column=0, sticky='w', pady=2)
+        l7.grid(row=5, column=2, sticky='w', pady=2)
+        l8.grid(row=6, column=0, sticky='w', pady=2)
+        l9.grid(row=6, column=2, sticky='w', pady=2)
+        l10.grid(row=7, column=0, sticky='w', pady=2)
+        l11.grid(row=7, column=2, sticky='w', pady=2)
+        l12.grid(row=8, column=0, sticky='w', pady=2)
+        l13.grid(row=8, column=2, sticky='w', pady=2)
+
+        """Now for the text entry and other boxes"""
+        def selection_changed(event):
+            selected_value = combo.get()
+
+            self.name.set(selected_value)
+            self.root.set(settings.experiments[selected_value]['root'])
+            pattern.set(settings.experiments[selected_value]['pattern'])
+            dapi_ch.set(settings.experiments[selected_value].get('dapi_ch', 0))
+            dapi_gamma.set(settings.experiments[selected_value].get('dapi_gamma', 1.0))
+            o4_ch.set(settings.experiments[selected_value].get('o4_ch', -1))
+            o4_gamma.set(settings.experiments[selected_value].get('o4_gamma', 1.0))
+            edu_ch.set(settings.experiments[selected_value].get('edu_ch', -1))
+            edu_gamma.set(settings.experiments[selected_value].get('edu_gamma', 1.0))
+            gfap_ch.set(settings.experiments[selected_value].get('gfap_ch', -1))
+            gfap_th.set(settings.experiments[selected_value].get('gfap_th', 1000))
+            scalefactor.set(settings.experiments[selected_value].get('scalefactor', 1))
+            debug.set(settings.experiments[selected_value].get('debug', 0))
+            print("Selected:", selected_value)
+
+        self.name = tk.StringVar()
+        experiments = list(settings.experiments)
+        print(experiments)
+        self.name.set(settings.defaults["name"])
+        combo = ttk.Combobox(self.top_frame, values=experiments,
+                         width=80, textvariable=self.name,
+                         font=tkFont.Font(family="Calibri", size=14))
+        combo.bind("<<ComboboxSelected>>", selection_changed)
 
         e1 = tk.Frame(self.top_frame)
-
         tk.Button(e1,
                   text="Browse",
                   command=lambda: self.select_folder(),
@@ -208,23 +241,25 @@ class Application(tk.Frame):
                              onvalue=True, offvalue=False,
                              anchor='w')
 
-        e1.grid(row=0, column=1, columnspan=3, sticky='w', pady=2)
-        e2.grid(row=1, column=1, columnspan=3, sticky='w', pady=2)
-        e3.grid(row=3, column=1, sticky='w', pady=2)
-        e4.grid(row=3, column=3, sticky='w', pady=2)
-        e5.grid(row=4, column=1, sticky='w', pady=2)
-        e6.grid(row=4, column=3, sticky='w', pady=2)
-        e7.grid(row=5, column=1, sticky='w', pady=2)
-        e8.grid(row=5, column=3, sticky='w', pady=2)
-        e9.grid(row=6, column=1, sticky='w', pady=2)
-        e10.grid(row=6, column=3, sticky='w', pady=2)
-        e11.grid(row=7, column=1, sticky='w', pady=2)
-        e12.grid(row=7, column=3, columnspan=3, sticky='w', pady=2)
+        combo.grid(row=0, column=1, sticky='w', pady=2)
+        e1.grid(row=1, column=1, columnspan=3, sticky='w', pady=2)
+        e2.grid(row=2, column=1, columnspan=3, sticky='w', pady=2)
+        e3.grid(row=4, column=1, sticky='w', pady=2)
+        e4.grid(row=4, column=3, sticky='w', pady=2)
+        e5.grid(row=5, column=1, sticky='w', pady=2)
+        e6.grid(row=5, column=3, sticky='w', pady=2)
+        e7.grid(row=6, column=1, sticky='w', pady=2)
+        e8.grid(row=6, column=3, sticky='w', pady=2)
+        e9.grid(row=7, column=1, sticky='w', pady=2)
+        e10.grid(row=7, column=3, sticky='w', pady=2)
+        e11.grid(row=8, column=1, sticky='w', pady=2)
+        e12.grid(row=8, column=3, columnspan=3, sticky='w', pady=2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
                             text="Start",
-                            command=lambda: self.start_analysis(folder_root=self.root.get(),
+                            command=lambda: self.start_analysis(name = self.name.get(),
+                                                                folder_root=self.root.get(),
                                                                 pattern=pattern.get(),
                                                                 dapi_ch=dapi_ch.get(),
                                                                 dapi_gamma=dapi_gamma.get(),
@@ -259,7 +294,7 @@ class Application(tk.Frame):
         # add progress bar
         self.progress = Progressbar(self.bottom_frame,
                                     length=200, orient=tk.HORIZONTAL, mode='determinate')
-        self.progress.pack(side="bottom", fill="y", expand="True")
+        self.progress.pack(side="bottom", fill="y", expand=True)
 
     def select_folder(self):
         import os
@@ -267,6 +302,7 @@ class Application(tk.Frame):
 
     def start_analysis(
             self,
+            name: str,
             folder_root: str,
             pattern: str,
             dapi_ch: int,
@@ -285,6 +321,7 @@ class Application(tk.Frame):
 
         # save settings
         settings.updateDefaults(
+            name,
             folder_root,
             pattern,
             dapi_ch,
@@ -297,6 +334,12 @@ class Application(tk.Frame):
             gfap_th,
             scalefactor,
             debug)
+
+        if name == "temp":
+            self.console.insert("end", "\nTemporary analysis. experiments.json will not be updated")
+        else:
+            settings.saveExperimentalParameters()
+            self.console.insert("end", "\nUpdating list of experiment parameters")
 
         # set o4_ch and edu_ch to none if -1
         if o4_ch == -1:
