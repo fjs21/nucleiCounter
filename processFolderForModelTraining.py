@@ -281,7 +281,7 @@ class Application(tk.Frame):
         """
         cell_index = 0
 
-        # rest progress bar
+        # reset progress bar
         self.progress["value"] = 0
         self.progress.update()
 

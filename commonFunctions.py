@@ -153,15 +153,17 @@ def loadKerasModel(filename):
     return load_model(filename)
 
 
+def remove_folder_contents(folder_path):
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isfile(item_path):
+            os.remove(item_path)
+        elif os.path.isdir(item_path):
+            remove_folder_contents(item_path)  # Recursively remove subfolders
+            os.rmdir(item_path)
+
 def create_empty_folder(folder_path):
     if os.path.exists(folder_path):
-        # If the folder already exists, remove its contents
-        for item in os.listdir(folder_path):
-            item_path = os.path.join(folder_path, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                os.rmdir(item_path)
+        remove_folder_contents(folder_path)
     else:
-        # If the folder doesn't exist, create it
         os.makedirs(folder_path)

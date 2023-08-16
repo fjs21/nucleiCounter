@@ -130,7 +130,7 @@ class Application(tk.Frame):
         def badAnnotation(cell, newAnnotation):
             """Deal with file with bad annotation."""
             # print(cell['cell'])
-            original = fullPath(keras_folder, cell['cell'])
+            original = cell['cell']
             replacement = 'unknown'
             if newAnnotation == 0:
                 replacement = 'o4neg'
@@ -140,13 +140,15 @@ class Application(tk.Frame):
             import re
             new = re.sub(r'unknown|o4pos|o4neg', replacement, original)
 
-            if not os.path.isfile(original):
+            if not os.path.isfile(fullPath(keras_folder, original)):
                 # file not found
                 print(f"File {original} not found!")
                 return
 
-            os.rename(original, new)
+            os.rename(fullPath(keras_folder, original), fullPath(keras_folder, new))
             print(f"File {original} renamed to {new}.")
+
+            return new
 
         def checkKey():
             """ Wait for user response."""
@@ -162,7 +164,7 @@ class Application(tk.Frame):
                         cell['annotation'] = 1
                     elif cell['classification'] != 1:
                         cell['annotation'] = 0
-                        badAnnotation(cell, 1)
+                        cell['cell'] = badAnnotation(cell, 1)
                     flag = False
                 elif k == 110:
                     # if 'n' (O4 neg cell) then
@@ -170,7 +172,7 @@ class Application(tk.Frame):
                         cell['annotation'] = 0
                     elif cell['classification'] != 1:
                         cell['annotation'] = 1
-                        badAnnotation(cell, 0)
+                        cell['cell'] = badAnnotation(cell, 0)
                     flag = False
             return False
 
