@@ -29,7 +29,7 @@ class Application(tk.Frame):
         self.console_scrollbar = None
         self.root = None
         self.master = master
-        self.master.title("Nuclei counter")
+        self.master.title("Sim Lab: In vitro analysis")
         self.pack()
         self.main_container = tk.Frame(master)
         self.main_container.pack(side="top", fill="both", expand=True)
@@ -120,6 +120,11 @@ class Application(tk.Frame):
                        anchor='e',
                        font=tkFont.Font(family="Calibri", size=12))
 
+        prediction_cutoff_label = tk.Label(self.top_frame,
+                       text="""O4 Keras Model Prediction cutoff:""",
+                       anchor='e',
+                       font=tkFont.Font(family="Calibri", size=12))
+
         n1.grid(row=0, column=0, sticky='w', pady=2)
         l1.grid(row=1, column=0, sticky='w', pady=2)
         l2.grid(row=2, column=0, sticky='w', pady=2)
@@ -134,6 +139,7 @@ class Application(tk.Frame):
         l11.grid(row=7, column=2, sticky='w', pady=2)
         l12.grid(row=8, column=0, sticky='w', pady=2)
         l13.grid(row=8, column=2, sticky='w', pady=2)
+        prediction_cutoff_label.grid(row=9, column=0, sticky='w', pady=2)
 
         """Now for the text entry and other boxes"""
         def selection_changed(event):
@@ -241,7 +247,17 @@ class Application(tk.Frame):
                              onvalue=True, offvalue=False,
                              anchor='w')
 
-        combo.grid(row=0, column=1, sticky='w', pady=2)
+        # prediction_cutoff
+        prediction_cutoff = tk.DoubleVar()
+        if 'prediction_cutoff' in settings.defaults:
+            prediction_cutoff.set(settings.defaults['prediction_cutoff'])
+        else:
+            prediction_cutoff.set(0.5)
+        prediction_cutoff_entry = tk.Entry(self.top_frame, width=20,
+                                           textvariable=prediction_cutoff,
+                                           font=tkFont.Font(family="Calibri", size=12))
+
+        combo.grid(row=0, column=1, columnspan=3, sticky='w', pady=2)
         e1.grid(row=1, column=1, columnspan=3, sticky='w', pady=2)
         e2.grid(row=2, column=1, columnspan=3, sticky='w', pady=2)
         e3.grid(row=4, column=1, sticky='w', pady=2)
@@ -254,6 +270,7 @@ class Application(tk.Frame):
         e10.grid(row=7, column=3, sticky='w', pady=2)
         e11.grid(row=8, column=1, sticky='w', pady=2)
         e12.grid(row=8, column=3, columnspan=3, sticky='w', pady=2)
+        prediction_cutoff_entry.grid(row=9, column=1, sticky='w', pady=2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -270,6 +287,7 @@ class Application(tk.Frame):
                                                                 gfap_ch=gfap_ch.get(),
                                                                 gfap_th=gfap_th.get(),
                                                                 scalefactor=scalefactor.get(),
+                                                                prediction_cutoff=prediction_cutoff.get(),
                                                                 debug=debug.get()),
                             font=tkFont.Font(family="Calibri", size=12))
         button2.pack(side="top")
@@ -314,6 +332,7 @@ class Application(tk.Frame):
             edu_gamma: float = 1.0,
             gfap_th: int = 1000,
             scalefactor: float = 1.0,
+            prediction_cutoff: float = 0.5,
             debug: bool = False):
 
         # clear console
@@ -355,7 +374,7 @@ class Application(tk.Frame):
             self.console.insert("end", "\nSkipping Gfap channel & analysis")
 
         # start analysis
-        files = find(pattern, folder_root)
+        files = find(pattern, folder_root, excluded_subfolder='keras')
 
         if len(files) == 0:
             self.console.insert("end", f"No files found in '{folder_root}'. Check the input.")
@@ -378,7 +397,12 @@ class Application(tk.Frame):
         results = []
 
         if o4_ch is not None:
-            model = loadKerasModel(settings.kerasModel)
+            if os.path.exists(os.path.join(folder_root, settings.kerasModel)):
+                print("Using experiment specific model.")
+                model = loadKerasModel(os.path.join(folder_root, settings.kerasModel))
+            else:
+                print("Using old general model.")
+                model = loadKerasModel('o4counter_wAug_5.1.h5')
 
         # rest progress bar
         self.progress["value"] = 0
@@ -429,7 +453,7 @@ class Application(tk.Frame):
                     if o4_ch is not None:
                         sCI.processCells()
                         sCI.getPredictions(model)
-                        sCI.processPredictions(export_pdf, debug=debug)
+                        sCI.processPredictions(export_pdf, prediction_cutoff=prediction_cutoff, debug=debug)
 
                     if edu_ch is not None:
                         sCI.countEdUchannel(export_pdf)

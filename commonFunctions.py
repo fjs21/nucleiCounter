@@ -34,10 +34,12 @@ def fileModified(root, name, binary=False):
     return modified_time
 
 
-def find(pattern, path, binary=False):
+def find(pattern, path, binary=False, excluded_subfolder=''):
     """Find all files in path (and subfolders) matching pattern."""
     result = []
     for root, dirs, files in os.walk(path):
+        if excluded_subfolder in dirs:
+            dirs.remove(excluded_subfolder)
         for name in files:
             if fnmatch.fnmatch(name, pattern):
                 result.append({'path': root, 'name': name, 'modified': fileModified(root, name, binary)})
@@ -141,7 +143,7 @@ def parseFileName(imgFile):
     try:
         position = well_position[1]
     except:
-        print(f"Error parsing: {imgFile}")
+        print(f"Error parsing file name: {imgFile}")
         position = None
 
     return [stage, well, position]

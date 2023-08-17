@@ -579,14 +579,35 @@ class singleCompositeImage:
 
     def getPredictions(self, model):
         """Find predictions for all cells in image."""
+
+        # some cells in self.cells are not 'real' images
+        self.predictions = np.full(len(self.cells), -1, dtype=np.float64)
+
+        # store index of whether or not cell is valid
+        isImage_index = np.empty(len(self.cells), dtype=bool)
+        # store images in filteredImages
+        filteredImages = []
         for i in range(len(self.cells)):
-            if not isinstance(self.cells[i], int):
-                cell = self.cells[i].astype('float64')
-                cell = np.expand_dims(cell, axis=0)
-                # Find predictions - might not be the best method for multiple cells
-                self.predictions[i] = model.predict(cell)
+            if isinstance(self.cells[i], int):
+                # not an image
+                isImage_index[i] = False
             else:
-                self.predictions[i] = -1
+                isImage_index[i] = True
+                cell = self.cells[i].astype('float64')
+                cell /= 255.0
+                filteredImages.append(cell)
+
+        # use np.stack to convert filteredImages list into NumPy array for model.predict
+        imageStack = np.stack(filteredImages)
+        # print(imageStack.shape)
+
+        # use keras model to get predictions on each cell
+        predictions = model.predict(imageStack)
+        # print(predictions.flatten())
+
+        # reduce output to single dimension for storage in self.predictions
+        self.predictions[isImage_index] = predictions.flatten()
+        # print(self.predictions)
 
     def classifyCell(self, cell_index, cutoff=0.5):
         """Return cell classification"""

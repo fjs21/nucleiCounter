@@ -19,7 +19,7 @@ class Settings:
 
         # Keras Model
         self.kerasFolder = 'kerasFolder'
-        self.kerasModel = 'o4counter_wAug_5.1.h5'
+        self.kerasModel = 'o4counter_model.h5'
 
         # Settings for thresholdSegmentation
         self.opening_kernel = np.ones((3, 3), np.uint8)
@@ -48,6 +48,7 @@ class Settings:
                 "edu_gamma": 1.0,
                 "gfap_th": 1000,
                 "scalefactor": 1.0,
+                "prediction_cutoff": 0.5,
                 "debug": True}
 
         # Load experiments
@@ -70,6 +71,7 @@ class Settings:
                        edu_gamma: float = 1.0,
                        gfap_th: int = 1000,
                        scalefactor: float = 1.0,
+                       prediction_cutoff: float = 0.5,
                        debug: bool = False):
         """ Save defaults to temporary file. """
 
@@ -86,6 +88,7 @@ class Settings:
             "edu_gamma": edu_gamma,
             "gfap_th": gfap_th,
             "scalefactor": scalefactor,
+            "prediction_cutoff": prediction_cutoff,
             "debug": debug
         }
 

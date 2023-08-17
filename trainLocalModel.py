@@ -378,8 +378,7 @@ class Application(tk.Frame):
         print("Done.")
         print("****************")
 
-        analysis_name = 'o4counter_model.h5'
-        model.save(os.path.join(root_folder, analysis_name))
+        model.save(os.path.join(root_folder, settings.kerasModel))
 
         acc = history.history['acc']
         val_acc = history.history['val_acc']
@@ -388,7 +387,7 @@ class Application(tk.Frame):
 
         # output results as csv
         import csv
-        filename = os.path.join(root_folder, 'KerasModelFit_results_' + analysis_name + '.csv')
+        filename = os.path.join(root_folder, 'KerasModelFit_results_' + settings.kerasModel + '.csv')
         with open(filename, 'w', newline='') as f:
             w = csv.writer(f)
             w.writerow(['acc', 'val_acc', 'loss', 'val_loss'])
