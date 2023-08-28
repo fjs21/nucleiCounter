@@ -93,6 +93,8 @@ def findMatchingMarkerFile(path, imgFile):
 
     print(f"Could not find match for imgFile '{imgFile}' in path '{path}'.")
     return None
+
+
 def chkName(name):
     """Given a binary path, replace any unicode characters."""
     name_ascii = name.decode('ascii', 'ignore')
@@ -164,8 +166,42 @@ def remove_folder_contents(folder_path):
             remove_folder_contents(item_path)  # Recursively remove subfolders
             os.rmdir(item_path)
 
+
 def create_empty_folder(folder_path):
     if os.path.exists(folder_path):
         remove_folder_contents(folder_path)
     else:
         os.makedirs(folder_path)
+
+
+""" Function to automatically find the FIJI path. UNNECESSARY"""
+# def find_fiji():
+#     if platform.system() == 'Darwin':
+#         # Name of the Fiji application bundle
+#         fiji_app_name = "Fiji.app"
+#
+#         # Search for the Fiji.app folder in the /Applications directory
+#         applications_path = "/Applications"
+#         fiji_app_path = os.path.join(applications_path, fiji_app_name)
+#         # Check if the Fiji.app folder exists
+#         if os.path.exists(fiji_app_path):
+#             print("Path to Fiji.app:", fiji_app_path)
+#             return fiji_app_path
+#         else:
+#             print("Fiji.app not found in the default Applications folder.")
+#             raise "Fiji not found"
+#     elif platform.system() == 'Windows':
+#         # Name of the Fiji application folder
+#         fiji_folder_name = "Fiji.app"
+#
+#         # Search for the Fiji.app folder in the Program Files directory
+#         program_files_path = os.environ["ProgramFiles"]
+#         fiji_folder_path = os.path.join(program_files_path, fiji_folder_name)
+#
+#         # Check if the Fiji.app folder exists
+#         if os.path.exists(fiji_folder_path):
+#             print("Path to Fiji.app:", fiji_folder_path)
+#             return fiji_folder_path
+#         else:
+#             print("Fiji.app not found in the Program Files directory.")
+#             raise "Fiji not found in Program Files folder"

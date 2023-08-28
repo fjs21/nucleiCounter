@@ -6,15 +6,14 @@ from tkinter.ttk import Progressbar
 
 from matplotlib.backends.backend_pdf import PdfPages
 
-# start JVM for compatibility with VSI files
-# print('JAVA_HOME =', os.environ['JAVA_HOME'])
-import javabridge
-import bioformats
-
 from settings import Settings
 from commonFunctions import *
 from singleCompositeImage import singleCompositeImage
 
+# start JVM for compatibility with VSI files
+# print('JAVA_HOME =', os.environ['JAVA_HOME'])
+import javabridge
+import bioformats
 javabridge.start_vm(class_path=bioformats.JARS)
 
 settings = Settings()
@@ -86,7 +85,7 @@ class Application(tk.Frame):
                       font=tkFont.Font(family="Calibri", size=12))
 
         l8 = tk.Label(self.top_frame,
-                      text="""7. Which image slice contains the EdU image?""",
+                      text="""7. Which image slice contains the EdU (or other nuclear localized) image?""",
                       justify=tk.LEFT,
                       anchor='w',
                       font=tkFont.Font(family="Calibri", size=12))
@@ -110,7 +109,7 @@ class Application(tk.Frame):
                        font=tkFont.Font(family="Calibri", size=12))
 
         l12 = tk.Label(self.top_frame,
-                       text="""11. Scalefactor = """,
+                       text="""11. Scalefactor (1.0 is equivalent to 1.5385 pixels per 1.0 μm) = """,
                        justify=tk.LEFT,
                        anchor='w',
                        font=tkFont.Font(family="Calibri", size=12))

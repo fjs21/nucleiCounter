@@ -11,7 +11,7 @@ from pathlib import Path
 # to enable copying of cv2.merge objects
 import copy
 
-# to enable VSI file support
+# to enable VSI file support using bioformats
 import bioformats
 
 # to enable rolling ball subtraction
@@ -19,7 +19,6 @@ from skimage import restoration, filters
 
 from settings import Settings
 from commonFunctions import fullPath
-
 
 def showImages(images, maintitle='Images', titles=None, cmap='gray'):
     """Show multiple images."""
@@ -225,11 +224,21 @@ class singleCompositeImage:
         return images
 
     def openBioformats(self):
-        """Using bioformats to open image"""
         fullpath = fullPath(self.path, self.imgFile)
+        """Using bioformats to open image"""
         images = bioformats.load_image(fullpath, rescale=False)
         images = cv.split(images)
-
+        """ Using pyimagej & FIJI """
+        # ij = imagej.init('sc.fiji:fiji', mode='headless')
+        # ij = self.ij
+        # dataset = ij.io().open(fullpath)
+        # print(f"dataset.shape: {dataset.shape}")
+        # print(f"type(dataset): {type(dataset)}")
+        # imgPlus = dataset.getImgPlus()
+        # images = np.array(ij.py.from_java(imgPlus))
+        # print(f"images.shape: {images.shape}")
+        # print(f"type(images): {type(images)}")
+        # images = cv.split(images)
         return images
 
     def scaleImages(self, scalefactor: float):
@@ -583,9 +592,9 @@ class singleCompositeImage:
         # some cells in self.cells are not 'real' images
         self.predictions = np.full(len(self.cells), -1, dtype=np.float64)
 
-        # store index of whether or not cell is valid
+        # store index of whether cell is valid
         isImage_index = np.empty(len(self.cells), dtype=bool)
-        # store images in filteredImages
+        # store images in filteredImages list
         filteredImages = []
         for i in range(len(self.cells)):
             if isinstance(self.cells[i], int):
@@ -593,6 +602,7 @@ class singleCompositeImage:
                 isImage_index[i] = False
             else:
                 isImage_index[i] = True
+                # convert 0-255 to floating point 0-1
                 cell = self.cells[i].astype('float64')
                 cell /= 255.0
                 filteredImages.append(cell)

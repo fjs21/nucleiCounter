@@ -21,7 +21,7 @@ class Settings:
         self.kerasFolder = 'kerasFolder'
         self.kerasModel = 'o4counter_model.h5'
 
-        # Settings for thresholdSegmentation
+        # Settings for thresholdSegmentation (used for EdU, DAPI is hard coded for now)
         self.opening_kernel = np.ones((3, 3), np.uint8)
         self.opening_iterations = 3
         self.background_kernel = np.ones((3, 3), np.uint8)
