@@ -23,10 +23,11 @@ class Application(tk.Frame):
     def __init__(self, master=None):
         """Setup tk application."""
         super().__init__(master)
+        self.name = None
         self.progress = None
         self.console = None
         self.console_scrollbar = None
-        self.root = None
+        self.folder_root = None
         self.master = master
         self.master.title("Sim Lab: In vitro analysis")
         self.pack()
@@ -41,8 +42,8 @@ class Application(tk.Frame):
     def create_widgets(self):
         """Creates widgets on initial window."""
         n1 = tk.Label(self.top_frame,
-                     text="""Experiment Name""",
-                     font=tkFont.Font(family="Calibri", size=14))
+                      text="""Experiment Name""",
+                      font=tkFont.Font(family="Calibri", size=14))
 
         l1 = tk.Label(self.top_frame,
                       text="""1. Select folder to process:""",
@@ -120,9 +121,9 @@ class Application(tk.Frame):
                        font=tkFont.Font(family="Calibri", size=12))
 
         prediction_cutoff_label = tk.Label(self.top_frame,
-                       text="""O4 Keras Model Prediction cutoff:""",
-                       anchor='e',
-                       font=tkFont.Font(family="Calibri", size=12))
+                                           text="""O4 Keras Model Prediction cutoff:""",
+                                           anchor='e',
+                                           font=tkFont.Font(family="Calibri", size=12))
 
         n1.grid(row=0, column=0, sticky='w', pady=2)
         l1.grid(row=1, column=0, sticky='w', pady=2)
@@ -141,11 +142,13 @@ class Application(tk.Frame):
         prediction_cutoff_label.grid(row=9, column=0, sticky='w', pady=2)
 
         """Now for the text entry and other boxes"""
-        def selection_changed(event):
+
+        def selection_changed():
+            print("Selection changed")
             selected_value = combo.get()
 
             self.name.set(selected_value)
-            self.root.set(settings.experiments[selected_value]['root'])
+            self.folder_root.set(settings.experiments[selected_value]['root'])
             pattern.set(settings.experiments[selected_value]['pattern'])
             dapi_ch.set(settings.experiments[selected_value].get('dapi_ch', 0))
             dapi_gamma.set(settings.experiments[selected_value].get('dapi_gamma', 1.0))
@@ -156,6 +159,7 @@ class Application(tk.Frame):
             gfap_ch.set(settings.experiments[selected_value].get('gfap_ch', -1))
             gfap_th.set(settings.experiments[selected_value].get('gfap_th', 1000))
             scalefactor.set(settings.experiments[selected_value].get('scalefactor', 1))
+            prediction_cutoff.set(settings.experiments[selected_value].get('prediction_cutoff', 0.5))
             debug.set(settings.experiments[selected_value].get('debug', 0))
             print("Selected:", selected_value)
 
@@ -164,8 +168,8 @@ class Application(tk.Frame):
         print(experiments)
         self.name.set(settings.defaults["name"])
         combo = ttk.Combobox(self.top_frame, values=experiments,
-                         width=80, textvariable=self.name,
-                         font=tkFont.Font(family="Calibri", size=14))
+                             width=80, textvariable=self.name,
+                             font=tkFont.Font(family="Calibri", size=14))
         combo.bind("<<ComboboxSelected>>", selection_changed)
 
         e1 = tk.Frame(self.top_frame)
@@ -174,9 +178,9 @@ class Application(tk.Frame):
                   command=lambda: self.select_folder(),
                   font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.RIGHT)
 
-        self.root = tk.StringVar()
-        self.root.set(settings.defaults["root"])
-        tk.Entry(e1, width=80, textvariable=self.root,
+        self.folder_root = tk.StringVar()
+        self.folder_root.set(settings.defaults["root"])
+        tk.Entry(e1, width=80, textvariable=self.folder_root,
                  font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.LEFT)
 
         # set file pattern
@@ -274,8 +278,8 @@ class Application(tk.Frame):
         # start button
         button2 = tk.Button(self.bottom_frame,
                             text="Start",
-                            command=lambda: self.start_analysis(name = self.name.get(),
-                                                                folder_root=self.root.get(),
+                            command=lambda: self.start_analysis(name=self.name.get(),
+                                                                folder_root=self.folder_root.get(),
                                                                 pattern=pattern.get(),
                                                                 dapi_ch=dapi_ch.get(),
                                                                 dapi_gamma=dapi_gamma.get(),
@@ -315,7 +319,10 @@ class Application(tk.Frame):
 
     def select_folder(self):
         import os
-        self.root.set(os.path.abspath(fileDialog.askdirectory(title='Select source folder containing image files')))
+        directory_path = fileDialog.askdirectory(title='Select source folder containing image files',
+                                                 initialdir=self.folder_root.get())
+        if directory_path != "":
+            self.folder_root.set(os.path.abspath(directory_path))
 
     def start_analysis(
             self,
@@ -395,12 +402,13 @@ class Application(tk.Frame):
 
         results = []
 
+        model = None
         if o4_ch is not None:
             if os.path.exists(os.path.join(folder_root, settings.kerasModel)):
-                print("Using experiment specific model.")
+                self.console.insert("end", "\nUsing experiment specific model.")
                 model = loadKerasModel(os.path.join(folder_root, settings.kerasModel))
             else:
-                print("Using old general model.")
+                self.console.insert("end", "\nUsing old general model.")
                 model = loadKerasModel('o4counter_wAug_5.1.h5')
 
         # rest progress bar

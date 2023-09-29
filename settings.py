@@ -9,6 +9,7 @@ class Settings:
         """Initialize static settings."""
 
         # Define size of individual cell images
+        self.parameters = None
         self.width = 128
         self.height = 128
 
@@ -56,7 +57,6 @@ class Settings:
         # load existing
         with open(filename, "r") as f:
             self.experiments = json.load(f)
-
 
     def updateDefaults(self,
                        name: str,

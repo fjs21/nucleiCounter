@@ -20,6 +20,7 @@ from skimage import restoration, filters
 from settings import Settings
 from commonFunctions import fullPath
 
+
 def showImages(images, maintitle='Images', titles=None, cmap='gray'):
     """Show multiple images."""
 
@@ -495,9 +496,9 @@ class singleCompositeImage:
         """Returns an array of distances between two sets of points. (p1_index, p2_index, d). """
         fD = np.zeros((sources.shape[0], targets.shape[0]))
         for i in range(sources.shape[0]):
-            p1 = sources[i, ]
+            p1 = sources[i,]
             for j in range(targets.shape[0]):
-                p2 = targets[j, ]
+                p2 = targets[j,]
                 d = self.p2p_distance(p1, p2)
                 fD[i, j] = d
         return fD
