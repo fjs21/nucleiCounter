@@ -358,6 +358,7 @@ class Application(tk.Frame):
             edu_gamma,
             gfap_th,
             scalefactor,
+            prediction_cutoff,
             debug)
 
         if name == "temp":
