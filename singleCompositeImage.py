@@ -278,6 +278,8 @@ class singleCompositeImage:
         """IMAGE THRESHOLDING."""
         # based on - https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
 
+        print(f"blocksize = {blocksize}")
+
         # img = cv.medianBlur(img,5)
         img_blur = cv.GaussianBlur(img, (5, 5), 0)
 

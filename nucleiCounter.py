@@ -73,6 +73,18 @@ class Application(tk.Frame):
                       anchor='w',
                       font=tkFont.Font(family="Calibri", size=12))
 
+        dapi_blocksize_label = tk.Label(self.top_frame,
+                      text="""DAPI blocksize: """,
+                      justify=tk.LEFT,
+                      anchor='w',
+                      font=tkFont.Font(family="Calibri", size=12))
+
+        dapi_C_label = tk.Label(self.top_frame,
+                      text="""DAPI C: """,
+                      justify=tk.LEFT,
+                      anchor='w',
+                      font=tkFont.Font(family="Calibri", size=12))
+
         l6 = tk.Label(self.top_frame,
                       text="""5. Which image slice contains the O4 image?""",
                       justify=tk.LEFT,
@@ -131,15 +143,17 @@ class Application(tk.Frame):
         l3.grid(row=3, column=0, sticky='w', pady=2)
         l4.grid(row=4, column=0, sticky='w', pady=2)
         l5.grid(row=4, column=2, sticky='w', pady=2)
-        l6.grid(row=5, column=0, sticky='w', pady=2)
-        l7.grid(row=5, column=2, sticky='w', pady=2)
-        l8.grid(row=6, column=0, sticky='w', pady=2)
-        l9.grid(row=6, column=2, sticky='w', pady=2)
-        l10.grid(row=7, column=0, sticky='w', pady=2)
-        l11.grid(row=7, column=2, sticky='w', pady=2)
-        l12.grid(row=8, column=0, sticky='w', pady=2)
-        l13.grid(row=8, column=2, sticky='w', pady=2)
-        prediction_cutoff_label.grid(row=9, column=0, sticky='w', pady=2)
+        dapi_blocksize_label.grid(row=5, column=2, sticky='e', pady=2)
+        dapi_C_label.grid(row=6, column=2, sticky='e', pady=2)
+        l6.grid(row=7, column=0, sticky='w', pady=2)
+        l7.grid(row=7, column=2, sticky='w', pady=2)
+        l8.grid(row=8, column=0, sticky='w', pady=2)
+        l9.grid(row=8, column=2, sticky='w', pady=2)
+        l10.grid(row=9, column=0, sticky='w', pady=2)
+        l11.grid(row=9, column=2, sticky='w', pady=2)
+        l12.grid(row=10, column=0, sticky='w', pady=2)
+        l13.grid(row=10, column=2, sticky='w', pady=2)
+        prediction_cutoff_label.grid(row=11, column=0, sticky='w', pady=2)
 
         """Now for the text entry and other boxes"""
 
@@ -195,11 +209,22 @@ class Application(tk.Frame):
         e3 = tk.Entry(self.top_frame, width=20, textvariable=dapi_ch,
                       font=tkFont.Font(family="Calibri", size=12))
 
-        # set O4 gamma
+        # set DAPI gamma
         dapi_gamma = tk.DoubleVar()
         dapi_gamma.set(settings.defaults["dapi_gamma"])
         e4 = tk.Entry(self.top_frame, width=20, textvariable=dapi_gamma,
                       font=tkFont.Font(family="Calibri", size=12))
+
+        # set DAPI blocksize
+        dapi_blocksize = tk.IntVar()
+        dapi_blocksize.set(11) # need to be incorporated into settings
+        dapi_blocksize_entry = tk.Entry(self.top_frame, width=20, textvariable=dapi_blocksize,
+                                        font=tkFont.Font(family="Calibri", size=12))
+        # set DAPI C
+        dapi_C = tk.IntVar()
+        dapi_C.set(2)
+        dapi_C_entry = tk.Entry(self.top_frame, width=20, textvariable=dapi_C,
+                                        font=tkFont.Font(family="Calibri", size=12))
 
         # set O4 channel
         o4_ch = tk.IntVar()
@@ -265,15 +290,17 @@ class Application(tk.Frame):
         e2.grid(row=2, column=1, columnspan=3, sticky='w', pady=2)
         e3.grid(row=4, column=1, sticky='w', pady=2)
         e4.grid(row=4, column=3, sticky='w', pady=2)
-        e5.grid(row=5, column=1, sticky='w', pady=2)
-        e6.grid(row=5, column=3, sticky='w', pady=2)
-        e7.grid(row=6, column=1, sticky='w', pady=2)
-        e8.grid(row=6, column=3, sticky='w', pady=2)
-        e9.grid(row=7, column=1, sticky='w', pady=2)
-        e10.grid(row=7, column=3, sticky='w', pady=2)
-        e11.grid(row=8, column=1, sticky='w', pady=2)
-        e12.grid(row=8, column=3, columnspan=3, sticky='w', pady=2)
-        prediction_cutoff_entry.grid(row=9, column=1, sticky='w', pady=2)
+        dapi_blocksize_entry.grid(row=5, column=3, sticky='w', pady=2)
+        dapi_C_entry.grid(row=6, column=3, sticky='w', pady=2)
+        e5.grid(row=7, column=1, sticky='w', pady=2)
+        e6.grid(row=7, column=3, sticky='w', pady=2)
+        e7.grid(row=8, column=1, sticky='w', pady=2)
+        e8.grid(row=8, column=3, sticky='w', pady=2)
+        e9.grid(row=9, column=1, sticky='w', pady=2)
+        e10.grid(row=9, column=3, sticky='w', pady=2)
+        e11.grid(row=10, column=1, sticky='w', pady=2)
+        e12.grid(row=10, column=3, columnspan=3, sticky='w', pady=2)
+        prediction_cutoff_entry.grid(row=11, column=1, sticky='w', pady=2)
 
         # start button
         button2 = tk.Button(self.bottom_frame,
@@ -283,6 +310,8 @@ class Application(tk.Frame):
                                                                 pattern=pattern.get(),
                                                                 dapi_ch=dapi_ch.get(),
                                                                 dapi_gamma=dapi_gamma.get(),
+                                                                dapi_blocksize=dapi_blocksize.get(),
+                                                                dapi_C=dapi_C.get(),
                                                                 o4_ch=o4_ch.get(),
                                                                 o4_gamma=o4_gamma.get(),
                                                                 edu_ch=edu_ch.get(),
@@ -330,12 +359,14 @@ class Application(tk.Frame):
             folder_root: str,
             pattern: str,
             dapi_ch: int,
-            o4_ch: int = -1,
-            edu_ch: int = -1,
-            gfap_ch: int = -1,
             dapi_gamma: float = 1.0,
+            dapi_blocksize: int = 11,
+            dapi_C: int = 2,
+            o4_ch: int = -1,
             o4_gamma: float = 1.0,
+            edu_ch: int = -1,
             edu_gamma: float = 1.0,
+            gfap_ch: int = -1,
             gfap_th: int = 1000,
             scalefactor: float = 1.0,
             prediction_cutoff: float = 0.5,
@@ -456,7 +487,7 @@ class Application(tk.Frame):
                         gfap_th=gfap_th,
                         scalefactor=scalefactor,
                         debug=debug)
-                    sCI.processDAPI(threshold_method='th2')  # based on manual counts (see OneNote)
+                    sCI.processDAPI(threshold_method='th2', blocksize=dapi_blocksize, C=dapi_C)  # based on manual counts (see OneNote)
 
                     if o4_ch is not None:
                         sCI.processCells()
