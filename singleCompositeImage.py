@@ -1,3 +1,4 @@
+import cv2
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
@@ -68,6 +69,29 @@ def showImages(images, maintitle='Images', titles=None, cmap='gray'):
     # show plot
     plt.show()
 
+def showImage(image, maintitle = 'Image'):
+    """ Show single image. Not fully tested. Not currently used. """
+
+    # FigureManagerMac does not support full screen toggle
+    plt.switch_backend('TkAgg')
+    plt.imshow(image)
+
+    # set title of window
+    fig = plt.gcf()
+    fig.canvas.manager.set_window_title(maintitle)
+
+    # set window size at 85% of screen
+    # from: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
+    px = 1 / plt.rcParams['figure.dpi']
+    fig.set_size_inches(screen_x * 0.85 * px, screen_y * 0.85 * px)
+
+    # set position in fixed position in upper left from:
+    # https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with
+    # -matplotlib
+    window.wm_geometry("+%d+%d" % (100, 100))
+
+    # show plot
+    plt.show()
 
 class singleCompositeImage:
 
@@ -631,6 +655,34 @@ class singleCompositeImage:
         else:
             return 0
 
+    def stretchRgb(self, clipLimit=20, tileGridSize=(16,16) ):
+        # from https://stackoverflow.com/questions/42257173/contrast-stretching-in-python-opencv
+        img = cv.normalize(src=self.rgb, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+
+        hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        h, s, v = hsv_img[:, :, 0], hsv_img[:, :, 1], hsv_img[:, :, 2]
+
+        clahe = cv.createCLAHE(clipLimit, tileGridSize)
+        # stretched histogram for showing the image with better contrast
+        # - its not ok to use it for scientific calculations
+        v = clahe.apply(v)
+
+        hsv_img = np.dstack((h, s, v))
+
+        # NOTE: HSV2RGB returns BGR instead of RGB
+        bgr_stretched = cv.cvtColor(hsv_img, cv.COLOR_HSV2RGB)
+
+        # reversing the bands back to RGB
+        rgb_stretched = np.zeros(bgr_stretched.shape)
+        rgb_stretched[:, :, 0] = bgr_stretched[:, :, 2]
+        rgb_stretched[:, :, 1] = bgr_stretched[:, :, 1]
+        rgb_stretched[:, :, 2] = bgr_stretched[:, :, 0]
+
+        # if the values are float, plt will have problem showing them
+        rgb_stretched = rgb_stretched.astype('uint8')
+
+        return rgb_stretched
+
     def processPredictions(self, export_pdf, prediction_cutoff=0.5, debug: bool = False):
         from matplotlib.patches import Rectangle
 
@@ -661,10 +713,16 @@ class singleCompositeImage:
 
         # Generate summary image
         plt.figure(figsize=(10, 10))
-        plt.imshow(self.rgb)
+        # using CLAHE stretched image for summary figure
+        plt.imshow(self.stretchRgb())
         plt.title(os.path.join(self.path, self.imgFile)[-80:])
-        plt.scatter(cell_info[:, 0], cell_info[:, 1], c=np.array(self.settings.dotColors)[cell_info[:, 2].astype(int)],
-                    s=0.2)
+        # cell positions and colors
+        x = cell_info[:, 0]
+        y = cell_info[:, 1]
+        # print(cell_info[:, 2].astype(int).max())
+        c = np.array(self.settings.dotColors)[cell_info[:, 2].astype(int)]
+
+        plt.scatter(x, y, c=c, s=0.5)
         # if marker_index != 0:
         #     if pattern == '*MMStack.ome*.tif':
         #         markerFile = findNewestMarkerFile(self.path)

@@ -4,7 +4,6 @@ import numpy as np
 
 class Settings:
     """A class to store all settings."""
-
     def __init__(self):
         """Initialize static settings."""
 
@@ -13,7 +12,7 @@ class Settings:
         self.width = 128
         self.height = 128
 
-        self.dotColors = ['orange', 'cyan']
+        self.dotColors = ['orange', 'fuchsia']
 
         # Define distance between centroid and marker cutoff over which cell will not be classified
         self.fD_cutoff = 50
