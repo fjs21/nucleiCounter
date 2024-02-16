@@ -33,6 +33,9 @@ class Settings:
             with open(filename) as f:
                 self.defaults = json.load(f)
             print(self.defaults)
+            if 'name' not in self.defaults:
+                self.defaults['name'] = 'default'
+
         except FileNotFoundError:
             print("Defaults not found")
             self.defaults = {
@@ -54,8 +57,12 @@ class Settings:
         # Load experiments
         filename = "experiments.json"
         # load existing
-        with open(filename, "r") as f:
-            self.experiments = json.load(f)
+        try:
+            with open(filename, "r") as f:
+                self.experiments = json.load(f)
+        except FileNotFoundError:
+            print(f"The file '{filename}' was not found.")
+            self.experiments = {}
 
     def updateDefaults(self,
                        name: str,
