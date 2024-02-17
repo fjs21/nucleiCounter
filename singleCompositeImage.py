@@ -39,7 +39,7 @@ def showImages(images, maintitle='Images', titles=None, cmap='gray'):
             img = images[i]
             img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
             ax.imshow(img, cmap=cmap)
-            if titles is list:
+            if titles is not None and isinstance(titles, list):
                 ax.set_title(titles[i])
         else:
             fig.delaxes(ax)
@@ -69,7 +69,8 @@ def showImages(images, maintitle='Images', titles=None, cmap='gray'):
     # show plot
     plt.show()
 
-def showImage(image, maintitle = 'Image'):
+
+def showImage(image, maintitle='Image'):
     """ Show single image. Not fully tested. Not currently used. """
 
     # FigureManagerMac does not support full screen toggle
@@ -93,6 +94,7 @@ def showImage(image, maintitle = 'Image'):
     # show plot
     plt.show()
 
+
 class singleCompositeImage:
 
     def __init__(
@@ -102,15 +104,34 @@ class singleCompositeImage:
             dapi_ch: int,
             o4_ch: int = None,
             EdU_ch: int = None,
+            Olig2_ch: int = None,
+            mCherry_ch: int = None,
             gfap_ch: int = None,
             dapi_gamma: float = 1.0,
             o4_gamma: float = 1.0,
             EdU_gamma: float = 1.0,
+            Olig2_gamma: float = 1.0,
+            mCherry_gamma: float = 1.0,
             gfap_th: int = 1000,
             # to take into account different magnifications across images and training set
             scalefactor: float = 1,
             debug: bool = False):
 
+        self.mCherry_centroid_y = None
+        self.mCherry_centroid_x = None
+        self.mCherry_watershed = None
+        self.Olig2_centroid_y = None
+        self.Olig2_centroid_x = None
+        self.Olig2_watershed = None
+        self.EdU_centroid_y = None
+        self.EdU_centroid_x = None
+        self.EdU_watershed = None
+        self.olig2pos_count = None
+        self.mCherrypos_count = None
+        self.mCherrymask = None
+        self.Olig2pos_count = None
+        self.Olig2_mask = None
+        self.EdU_mask = None
         self.gfappos_count = None
         self.edupos_count = None
         self.o4neg_count = None
@@ -146,11 +167,15 @@ class singleCompositeImage:
         self.dapi_ch = dapi_ch
         self.o4_ch = o4_ch
         self.EdU_ch = EdU_ch
+        self.Olig2_ch = Olig2_ch
+        self.mCherry_ch = mCherry_ch
         self.gfap_ch = gfap_ch
 
         self.dapi_gamma = dapi_gamma
         self.o4_gamma = o4_gamma
         self.EdU_gamma = EdU_gamma
+        self.Olig2_gamma = Olig2_gamma
+        self.mCherry_gamma = mCherry_gamma
         self.gfap_th = gfap_th
 
         self.scalefactor = scalefactor
@@ -184,14 +209,15 @@ class singleCompositeImage:
         if gamma == -1:
             gamma = self.dapi_gamma
 
-        self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug)
+        self.nucleiImg = self.proccessNuclearImage(self.images[self.dapi_ch], gamma=gamma, debug=debug, title='DAPI')
         self.threshold_method = threshold_method
         self.nucleiThresh = self.imageThreshold(self.nucleiImg, self.threshold_method, blocksize=blocksize, C=C,
-                                                debug=debug)
+                                                debug=debug, title='DAPI')
 
         self.nucleiCount, self.output, self.nucleiMask, self.nucleiWatershed, self.nucleiMarkers = \
             self.thresholdSegmentation(
-                self.nucleiThresh, self.nucleiImg, opening_iterations=opening_iterations, debug=debug)
+                self.nucleiThresh, self.nucleiImg, opening_iterations=opening_iterations, debug=debug,
+                title='DAPI')
         self.centroids = self.output[3][1:, ]
         self.centroid_x = self.centroids[:, 0].astype(int)
         self.centroid_y = self.centroids[:, 1].astype(int)
@@ -241,6 +267,12 @@ class singleCompositeImage:
                     titles.append('O4')
                 elif i == self.EdU_ch:
                     titles.append('EdU')
+                elif i == self.Olig2_ch:
+                    titles.append('Olig2')
+                elif i == self.mCherry_ch:
+                    titles.append('mCherry')
+                elif i == self.gfap_ch:
+                    titles.append('GFAP')
                 else:
                     titles.append(f'channel #{i}')
 
@@ -280,25 +312,29 @@ class singleCompositeImage:
         self.images = tuple(images)
         print(f"New size = {self.images[0].shape}")
 
-    def proccessNuclearImage(self, img, gamma: float = 1, debug: bool = False):
-        """Function to process a fluorescence image with nuclear localized signal (e.g. DAPI)."""
+    def proccessNuclearImage(self, img, gamma: float = 1, debug: bool = False, title: str = ''):
+        """Function to process a fluorescence image with a nuclear localized signal (e.g. DAPI)."""
 
         if gamma != 1:
             if debug:
-                self.plotHistogram(img, gamma)
+                self.plotHistogram(img, gamma, title)
             img = self.gammaCorrect(img, gamma)
 
         # normalize (stretch histogram and convert to 8-bit)
-        img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        # img = cv.normalize(src=img, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+        img_min = np.min(img)
+        img_995_percentile = np.percentile(img, 99.5)
+        img_range = img_995_percentile - img_min
+        stretch_factor = 255 / img_range
+        img = (img - img_min) * stretch_factor
+        img = np.clip(img, 0, 255).astype(np.uint8)
 
         # invert image 
         img = cv.bitwise_not(img)
 
-        # FUTURE: consider other normalization strategies
-
         return img
 
-    def imageThreshold(self, img, threshold_method, blocksize=11, C=2, debug=False):
+    def imageThreshold(self, img, threshold_method, blocksize=11, C=2, debug=False, title=''):
         """IMAGE THRESHOLDING."""
         # based on - https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
 
@@ -316,8 +352,8 @@ class singleCompositeImage:
                   'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
         images = [img_blur, th1, th2, th3]
 
-        if self.debug or debug:
-            showImages(images, maintitle=f"imageThresholds - {self.imgFile}", titles=titles)
+        if debug:
+            showImages(images, maintitle=f"{title} - imageThresholds - {self.imgFile}", titles=titles)
 
         return cv.bitwise_not(eval(threshold_method))
 
@@ -328,7 +364,8 @@ class singleCompositeImage:
                               opening_iterations=None,
                               background_kernel=None,
                               background_iterations=None,
-                              debug=False):
+                              debug=False,
+                              title=''):
         """SEGMENTATION and WATERSHED"""
 
         # Read defaults from setting file
@@ -382,8 +419,8 @@ class singleCompositeImage:
         titles = ['threshold', 'opening', 'dist_transform', 'sure_fg', 'unknown', 'watershed']
         images = [thresh, opening, dist_transform, sure_fg, unknown, img]
 
-        if self.debug or debug:
-            showImages(images, maintitle=f"imageSegmentation - {self.imgFile}", titles=titles)
+        if debug:
+            showImages(images, maintitle=f"{title} - imageSegmentation - {self.imgFile}", titles=titles)
 
         count = markers.max() - 1
         output = cv.connectedComponentsWithStats(sure_fg)
@@ -655,7 +692,7 @@ class singleCompositeImage:
         else:
             return 0
 
-    def stretchRgb(self, clipLimit=20, tileGridSize=(16,16) ):
+    def stretchRgb(self, clipLimit=20, tileGridSize=(16, 16)):
         # from https://stackoverflow.com/questions/42257173/contrast-stretching-in-python-opencv
         img = cv.normalize(src=self.rgb, dst=None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
 
@@ -755,7 +792,7 @@ class singleCompositeImage:
         corrected_image = corrected_image * max_pixel
         return corrected_image
 
-    def plotHistogram(self, image, gamma: float = -1):
+    def plotHistogram(self, image, gamma: float = -1, title=''):
         """Plot a histogram of an image."""
         fig = plt.figure()
 
@@ -782,46 +819,91 @@ class singleCompositeImage:
         ax4.set_xlim([0, 255])
         ax4.set_yscale('log')
 
-        fig.suptitle('Gamma Correction')
+        maintitle=f'Gamma Correction of {title}'
+        fig.suptitle(maintitle)
         fig.tight_layout()
+
+        # set title of window
+        fig = plt.gcf()
+        fig.canvas.manager.set_window_title(maintitle)
+
         plt.show()
 
     def countEdUchannel(self, export_pdf):
-        """ EdU count code from testFolder_EdU.py"""
+        self.EdUpos_count, self.EdU_mask, self.EdU_watershed, self.EdU_centroid_x, \
+            self.EdU_centroid_y = self.countNuclearMarker(export_pdf, 'EdU',
+                                                          self.EdU_ch, self.EdU_gamma,
+                                                          debug=self.debug)
 
-        """ EdU count. """
-        EdU = self.proccessNuclearImage(
-            self.images[self.EdU_ch],
-            gamma=self.EdU_gamma)
+    def countOlig2channel(self, export_pdf):
+        self.Olig2pos_count, self.Olig2_mask, self.Olig2_watershed, self.Olig2_centroid_x, \
+            self.Olig2_centroid_y = self.countNuclearMarker(export_pdf, 'Olig2',
+                                                            self.Olig2_ch, self.Olig2_gamma,
+                                                            debug=self.debug)
+
+    def countmCherrychannel(self, export_pdf):
+        self.mCherrypos_count, self.mCherry_mask, self.mCherry_watershed, self.mCherry_centroid_x, \
+            self.mCherry_centroid_y = self.countNuclearMarker(export_pdf, 'mCherry',
+                                                              self.mCherry_ch, self.mCherry_gamma,
+                                                              debug=self.debug)
+
+    def countNuclearMarker(self, export_pdf, name1, channel1, gamma1,
+                           name2='DAPI', nucleiMask=None, nucleiCount=None, nucleiWatershed=None,
+                           centroid_x=None, centroid_y=None, debug: bool = False):
+        """ Count a nuclear marker"""
+
+        # set nucleiMask2 to DAPI if not specified.
+        if nucleiMask is None:
+            nucleiMask = self.nucleiMask
+            nucleiCount = self.nucleiCount
+            nucleiWatershed = self.nucleiWatershed
+            centroid_x = self.centroid_x
+            centroid_y = self.centroid_y
+
+        nuclearMarker = self.proccessNuclearImage(
+            self.images[channel1],
+            gamma=gamma1,
+            debug=debug,
+            title=name1)
+
         # sCI.threshold_method = thres
-        EdU_thresh = self.imageThreshold(
-            EdU,
+        nuclearMarker_thresh = self.imageThreshold(
+            nuclearMarker,
             threshold_method='th2',
             blocksize=23,
             C=10,
-            debug=self.debug)
+            debug=debug,
+            title=name1)
+        # should the above use the same settings as DAPI, i.e. nucleiMask
 
-        EdU_count, EdU_output, EdU_mask, EdU_watershed, EdU_markers = self.thresholdSegmentation(EdU_thresh, EdU,
-                                                                                                 debug=self.debug)
-        EdU_DAPI_overlap = cv.bitwise_and(self.nucleiMask, EdU_mask)
-        ret, EdU_DAPI_markers = cv.connectedComponents(EdU_DAPI_overlap)
+        nuclearMarker_count, nuclearMarker_output, nuclearMarker_mask, \
+            nuclearMarker_watershed, nuclearMarker_markers = \
+            self.thresholdSegmentation(nuclearMarker_thresh, nuclearMarker, debug=debug,
+                                       title=name1)
+        marker_overlap = cv.bitwise_and(nucleiMask, nuclearMarker_mask)
+        ret, marker_overlap_markers = cv.connectedComponents(marker_overlap)
 
-        self.edupos_count = EdU_DAPI_markers.max()  # count does not use watershed step
+        nuclearMarker_count = marker_overlap_markers.max()
 
-        """ Generate a summary PDF to quickly review DAPI and EdU counts. """
-        EdU_centroid_x = EdU_output[3][1:, 0].astype(int)
-        EdU_centroid_y = EdU_output[3][1:, 1].astype(int)
+        """ Generate a summary PDF to quickly review DAPI and nuclearMarker counts. """
+        nuclearMarker_centroid_x = nuclearMarker_output[3][1:, 0].astype(int)
+        nuclearMarker_centroid_y = nuclearMarker_output[3][1:, 1].astype(int)
 
         plt.figure(figsize=(20, 10))
         plt.suptitle(f"{self.path}\\{self.imgFile}")
-        plt.subplot(1, 2, 1), plt.imshow(self.nucleiWatershed)
-        plt.subplot(1, 2, 1), plt.title(f"DAPI+: {self.nucleiCount}")
-        plt.subplot(1, 2, 2), plt.imshow(EdU_watershed)
-        plt.subplot(1, 2, 2), plt.scatter(self.centroid_x, self.centroid_y, s=0.5)
-        plt.subplot(1, 2, 2), plt.scatter(EdU_centroid_x, EdU_centroid_y, c="yellow", s=0.5)
-        plt.subplot(1, 2, 2), plt.title(f"EdU+DAPI+: {self.edupos_count}")
+        plt.subplot(1, 2, 1), plt.imshow(nucleiWatershed)
+        plt.subplot(1, 2, 1), plt.title(f"{name2}+: {nucleiCount}")
+        plt.subplot(1, 2, 2), plt.imshow(nuclearMarker_watershed)
+        plt.subplot(1, 2, 2), plt.scatter(centroid_x, centroid_y, s=0.5)
+        plt.subplot(1, 2, 2), plt.scatter(nuclearMarker_centroid_x, nuclearMarker_centroid_y, c="yellow", s=0.5)
+        plt.subplot(1, 2, 2), plt.title(f"{name1}+{name2}+: {nuclearMarker_count}")
         export_pdf.savefig(dpi=300)
         plt.close()
+
+        return nuclearMarker_count, nuclearMarker_mask, nuclearMarker_watershed, nuclearMarker_centroid_x, \
+            nuclearMarker_centroid_y
+
+        # count does not use watershed step
 
     @staticmethod
     def rolling_ball_subtraction(original_image, radius=50, debug: bool = False):

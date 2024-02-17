@@ -14,12 +14,13 @@ from singleCompositeImage import singleCompositeImage
 # print('JAVA_HOME =', os.environ['JAVA_HOME'])
 import javabridge
 import bioformats
+
 javabridge.start_vm(class_path=bioformats.JARS)
 
 settings = Settings()
 
 
-class Application(tk.Frame):
+class Application(ttk.Frame):
     def __init__(self, master=None):
         """Setup tk application."""
         super().__init__(master)
@@ -31,111 +32,138 @@ class Application(tk.Frame):
         self.master = master
         self.master.title("Sim Lab: In vitro analysis")
         self.pack()
-        self.main_container = tk.Frame(master)
+        self.main_container = ttk.Frame(master)
         self.main_container.pack(side="top", fill="both", expand=True)
-        self.top_frame = tk.Frame(self.main_container)
-        self.bottom_frame = tk.Frame(self.main_container, background="grey")
+        self.top_frame = ttk.Frame(self.main_container)
+        self.bottom_frame = ttk.Frame(self.main_container)
         self.top_frame.pack(side="top", fill="x", expand=False)
         self.bottom_frame.pack(side="bottom", fill="both", expand=True)
         self.create_widgets()
 
     def create_widgets(self):
         """Creates widgets on initial window."""
-        n1 = tk.Label(self.top_frame,
-                      text="""Experiment Name""",
-                      font=tkFont.Font(family="Calibri", size=14))
+        style = ttk.Style()
+        style.theme_use('aqua')
 
-        l1 = tk.Label(self.top_frame,
-                      text="""1. Select folder to process:""",
-                      font=tkFont.Font(family="Calibri", size=12))
+        n1 = ttk.Label(self.top_frame,
+                       text="""Experiment Name""",
+                       font=tkFont.Font(family="Calibri", size=14))
 
-        l2 = tk.Label(self.top_frame,
-                      text="""2. Define pattern for image files:""",
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
+        l1 = ttk.Label(self.top_frame,
+                       text="""1. Select folder to process:""",
+                       font=tkFont.Font(family="Calibri", size=12))
 
-        l3 = tk.Label(self.top_frame,
-                      text="""Choose slice for each antigen label, use -1 to indicate antigen not present.""",
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l4 = tk.Label(self.top_frame,
-                      text="""3. Which image slice contains the DAPI image?""",
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l5 = tk.Label(self.top_frame,
-                      text="""4. DAPI gamma = """,
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        dapi_blocksize_label = tk.Label(self.top_frame,
-                      text="""DAPI blocksize: """,
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        dapi_C_label = tk.Label(self.top_frame,
-                      text="""DAPI C: """,
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l6 = tk.Label(self.top_frame,
-                      text="""5. Which image slice contains the O4 image?""",
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l7 = tk.Label(self.top_frame,
-                      text="""6. O4 gamma = """,
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l8 = tk.Label(self.top_frame,
-                      text="""7. Which image slice contains the EdU (or other nuclear localized) image?""",
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l9 = tk.Label(self.top_frame,
-                      text="""8. EdU gamma = """,
-                      justify=tk.LEFT,
-                      anchor='w',
-                      font=tkFont.Font(family="Calibri", size=12))
-
-        l10 = tk.Label(self.top_frame,
-                       text="""9. Which image slice contains the Gfap image?""",
+        l2 = ttk.Label(self.top_frame,
+                       text="""2. Define pattern for image files:""",
                        justify=tk.LEFT,
                        anchor='w',
                        font=tkFont.Font(family="Calibri", size=12))
 
-        l11 = tk.Label(self.top_frame,
-                       text="""10. Gfap threshold = """,
+        l3 = ttk.Label(self.top_frame,
+                       text="""Choose slice for each antigen label, use -1 to indicate antigen not present.""",
                        justify=tk.LEFT,
                        anchor='w',
                        font=tkFont.Font(family="Calibri", size=12))
 
-        l12 = tk.Label(self.top_frame,
-                       text="""11. Scalefactor (1.0 is equivalent to 1.5385 pixels per 1.0 μm) = """,
+        l4 = ttk.Label(self.top_frame,
+                       text="""3. Which image slice contains the DAPI image?""",
                        justify=tk.LEFT,
                        anchor='w',
                        font=tkFont.Font(family="Calibri", size=12))
 
-        l13 = tk.Label(self.top_frame,
-                       text="""Enable debug?""",
-                       anchor='e',
+        l5 = ttk.Label(self.top_frame,
+                       text="""4. DAPI gamma = """,
+                       justify=tk.LEFT,
+                       anchor='w',
                        font=tkFont.Font(family="Calibri", size=12))
 
-        prediction_cutoff_label = tk.Label(self.top_frame,
-                                           text="""O4 Keras Model Prediction cutoff:""",
-                                           anchor='e',
-                                           font=tkFont.Font(family="Calibri", size=12))
+        dapi_blocksize_label = ttk.Label(self.top_frame,
+                                         text="""DAPI blocksize: """,
+                                         justify=tk.LEFT,
+                                         anchor='w',
+                                         font=tkFont.Font(family="Calibri", size=12))
+
+        dapi_C_label = ttk.Label(self.top_frame,
+                                 text="""DAPI C: """,
+                                 justify=tk.LEFT,
+                                 anchor='w',
+                                 font=tkFont.Font(family="Calibri", size=12))
+
+        l6 = ttk.Label(self.top_frame,
+                       text="""5. Which image slice contains the O4 image?""",
+                       justify=tk.LEFT,
+                       anchor='w',
+                       font=tkFont.Font(family="Calibri", size=12))
+
+        l7 = ttk.Label(self.top_frame,
+                       text="""6. O4 gamma = """,
+                       justify=tk.LEFT,
+                       anchor='w',
+                       font=tkFont.Font(family="Calibri", size=12))
+
+        l_EdUch = ttk.Label(self.top_frame,
+                            text="""7. Which image slice contains the EdU image?""",
+                            justify=tk.LEFT,
+                            anchor='w',
+                            font=tkFont.Font(family="Calibri", size=12))
+
+        l_EdUg = ttk.Label(self.top_frame,
+                           text="""8. EdU gamma = """,
+                           justify=tk.LEFT,
+                           anchor='w',
+                           font=tkFont.Font(family="Calibri", size=12))
+
+        l_Olig2Ch = ttk.Label(self.top_frame,
+                              text="""Which image slice contains the Olig2 image?""",
+                              justify=tk.LEFT,
+                              anchor='w',
+                              font=tkFont.Font(family="Calibri", size=12))
+
+        l_Olig2g = ttk.Label(self.top_frame,
+                             text="""Olig2 gamma = """,
+                             justify=tk.LEFT,
+                             anchor='w',
+                             font=tkFont.Font(family="Calibri", size=12))
+
+        l_mCherryCh = ttk.Label(self.top_frame,
+                                text="""Which image slice contains the NLS mCherry image?""",
+                                justify=tk.LEFT,
+                                anchor='w',
+                                font=tkFont.Font(family="Calibri", size=12))
+
+        l_mCherryg = ttk.Label(self.top_frame,
+                               text="""NLS mCherry gamma = """,
+                               justify=tk.LEFT,
+                               anchor='w',
+                               font=tkFont.Font(family="Calibri", size=12))
+
+        l10 = ttk.Label(self.top_frame,
+                        text="""9. Which image slice contains the Gfap image?""",
+                        justify=tk.LEFT,
+                        anchor='w',
+                        font=tkFont.Font(family="Calibri", size=12))
+
+        l11 = ttk.Label(self.top_frame,
+                        text="""10. Gfap threshold = """,
+                        justify=tk.LEFT,
+                        anchor='w',
+                        font=tkFont.Font(family="Calibri", size=12))
+
+        l12 = ttk.Label(self.top_frame,
+                        text="""11. Scalefactor (1.0 is equivalent to 1.5385 pixels per 1.0 μm) = """,
+                        justify=tk.LEFT,
+                        anchor='w',
+                        font=tkFont.Font(family="Calibri", size=12))
+
+        l13 = ttk.Label(self.top_frame,
+                        text="""Enable debug?""",
+                        anchor='e',
+                        font=tkFont.Font(family="Calibri", size=12))
+
+        prediction_cutoff_label = ttk.Label(self.top_frame,
+                                            text="""O4 Keras Model Prediction cutoff:""",
+                                            anchor='e',
+                                            font=tkFont.Font(family="Calibri", size=12))
 
         n1.grid(row=0, column=0, sticky='w', pady=2)
         l1.grid(row=1, column=0, sticky='w', pady=2)
@@ -145,15 +173,24 @@ class Application(tk.Frame):
         l5.grid(row=4, column=2, sticky='w', pady=2)
         dapi_blocksize_label.grid(row=5, column=2, sticky='e', pady=2)
         dapi_C_label.grid(row=6, column=2, sticky='e', pady=2)
+
         l6.grid(row=7, column=0, sticky='w', pady=2)
         l7.grid(row=7, column=2, sticky='w', pady=2)
-        l8.grid(row=8, column=0, sticky='w', pady=2)
-        l9.grid(row=8, column=2, sticky='w', pady=2)
-        l10.grid(row=9, column=0, sticky='w', pady=2)
-        l11.grid(row=9, column=2, sticky='w', pady=2)
-        l12.grid(row=10, column=0, sticky='w', pady=2)
-        l13.grid(row=10, column=2, sticky='w', pady=2)
-        prediction_cutoff_label.grid(row=11, column=0, sticky='w', pady=2)
+        # EdU
+        l_EdUch.grid(row=8, column=0, sticky='w', pady=2)
+        l_EdUg.grid(row=8, column=2, sticky='w', pady=2)
+        # Olig2
+        l_Olig2Ch.grid(row=9, column=0, sticky='w', pady=2)
+        l_Olig2g.grid(row=9, column=2, sticky='w', pady=2)
+        # NLS mCherry
+        l_mCherryCh.grid(row=10, column=0, sticky='w', pady=2)
+        l_mCherryg.grid(row=10, column=2, sticky='w', pady=2)
+
+        l10.grid(row=11, column=0, sticky='w', pady=2)
+        l11.grid(row=11, column=2, sticky='w', pady=2)
+        l12.grid(row=12, column=0, sticky='w', pady=2)
+        l13.grid(row=12, column=2, sticky='w', pady=2)
+        prediction_cutoff_label.grid(row=13, column=0, sticky='w', pady=2)
 
         """Now for the text entry and other boxes"""
 
@@ -186,94 +223,124 @@ class Application(tk.Frame):
                              font=tkFont.Font(family="Calibri", size=14))
         combo.bind("<<ComboboxSelected>>", selection_changed)
 
-        e1 = tk.Frame(self.top_frame)
-        tk.Button(e1,
-                  text="Browse",
-                  command=lambda: self.select_folder(),
-                  font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.RIGHT)
+        e1 = ttk.Frame(self.top_frame)
+        ttk.Button(e1,
+                   text="Browse",
+                   command=lambda: self.select_folder()).pack(side=tk.RIGHT)
 
         self.folder_root = tk.StringVar()
         self.folder_root.set(settings.defaults["root"])
-        tk.Entry(e1, width=80, textvariable=self.folder_root,
-                 font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.LEFT)
+        ttk.Entry(e1, width=80, textvariable=self.folder_root,
+                  font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.LEFT)
 
         # set file pattern
         pattern = tk.StringVar()
         pattern.set(settings.defaults["pattern"])
-        e2 = tk.Entry(self.top_frame, width=20, textvariable=pattern,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e2 = ttk.Entry(self.top_frame, width=20, textvariable=pattern,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set DAPI channel
         dapi_ch = tk.IntVar()
         dapi_ch.set(settings.defaults["dapi_ch"])
-        e3 = tk.Entry(self.top_frame, width=20, textvariable=dapi_ch,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e3 = ttk.Entry(self.top_frame, width=20, textvariable=dapi_ch,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set DAPI gamma
         dapi_gamma = tk.DoubleVar()
         dapi_gamma.set(settings.defaults["dapi_gamma"])
-        e4 = tk.Entry(self.top_frame, width=20, textvariable=dapi_gamma,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e4 = ttk.Entry(self.top_frame, width=20, textvariable=dapi_gamma,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set DAPI blocksize
         dapi_blocksize = tk.IntVar()
-        dapi_blocksize.set(11) # need to be incorporated into settings
-        dapi_blocksize_entry = tk.Entry(self.top_frame, width=20, textvariable=dapi_blocksize,
-                                        font=tkFont.Font(family="Calibri", size=12))
+        dapi_blocksize.set(11)  # need to be incorporated into settings
+        dapi_blocksize_entry = ttk.Entry(self.top_frame, width=20, textvariable=dapi_blocksize,
+                                         font=tkFont.Font(family="Calibri", size=12))
         # set DAPI C
         dapi_C = tk.IntVar()
         dapi_C.set(2)
-        dapi_C_entry = tk.Entry(self.top_frame, width=20, textvariable=dapi_C,
-                                        font=tkFont.Font(family="Calibri", size=12))
+        dapi_C_entry = ttk.Entry(self.top_frame, width=20, textvariable=dapi_C,
+                                 font=tkFont.Font(family="Calibri", size=12))
 
         # set O4 channel
         o4_ch = tk.IntVar()
         o4_ch.set(settings.defaults["o4_ch"])
-        e5 = tk.Entry(self.top_frame, width=20, textvariable=o4_ch,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e5 = ttk.Entry(self.top_frame, width=20, textvariable=o4_ch,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set O4 gamma
         o4_gamma = tk.DoubleVar()
         o4_gamma.set(settings.defaults["o4_gamma"])
-        e6 = tk.Entry(self.top_frame, width=20, textvariable=o4_gamma,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e6 = ttk.Entry(self.top_frame, width=20, textvariable=o4_gamma,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set EdU channel
         edu_ch = tk.IntVar()
         edu_ch.set(settings.defaults["edu_ch"])
-        e7 = tk.Entry(self.top_frame, width=20, textvariable=edu_ch,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e_EdUCh = ttk.Entry(self.top_frame, width=20, textvariable=edu_ch,
+                            font=tkFont.Font(family="Calibri", size=12))
 
         # set EdU gamma
         edu_gamma = tk.DoubleVar()
         edu_gamma.set(settings.defaults["edu_gamma"])
-        e8 = tk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e_EdUg = ttk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
+                           font=tkFont.Font(family="Calibri", size=12))
+
+        # set Olig2 channel
+        olig2_ch = tk.IntVar()
+        if "olig2_ch" in settings.defaults:
+            olig2_ch.set(settings.defaults["olig2_ch"])
+        else:
+            olig2_ch.set(-1)
+        e_Olig2Ch = ttk.Entry(self.top_frame, width=20, textvariable=olig2_ch,
+                              font=tkFont.Font(family="Calibri", size=12))
+
+        # set Olig2 gamma
+        olig2_gamma = tk.DoubleVar()
+        if "olig2_gamma" in settings.defaults:
+            olig2_gamma.set(settings.defaults["olig2_gamma"])
+        e_Olig2g = ttk.Entry(self.top_frame, width=20, textvariable=olig2_gamma,
+                             font=tkFont.Font(family="Calibri", size=12))
+
+        # set mCherry channel
+        mCherry_ch = tk.IntVar()
+        if "mCherry_ch" in settings.defaults:
+            mCherry_ch.set(settings.defaults["mCherry_ch"])
+        else:
+            mCherry_ch.set(-1)
+        e_mCherryCh = ttk.Entry(self.top_frame, width=20, textvariable=mCherry_ch,
+                                font=tkFont.Font(family="Calibri", size=12))
+
+        # set EdU gamma
+        mCherry_gamma = tk.DoubleVar()
+        if "mCherry_gamma" in settings.defaults:
+            mCherry_gamma.set(settings.defaults["mCherry_gamma"])
+        e_mCherryg = ttk.Entry(self.top_frame, width=20, textvariable=mCherry_gamma,
+                               font=tkFont.Font(family="Calibri", size=12))
 
         # set Gfap channel
         gfap_ch = tk.IntVar()
         gfap_ch.set(settings.defaults["gfap_ch"])
-        e9 = tk.Entry(self.top_frame, width=20, textvariable=gfap_ch,
-                      font=tkFont.Font(family="Calibri", size=12))
+        e9 = ttk.Entry(self.top_frame, width=20, textvariable=gfap_ch,
+                       font=tkFont.Font(family="Calibri", size=12))
 
         # set Gfap threshold
         gfap_th = tk.IntVar()
         gfap_th.set(settings.defaults["gfap_th"])
-        e10 = tk.Entry(self.top_frame, width=20, textvariable=gfap_th,
-                       font=tkFont.Font(family="Calibri", size=12))
+        e10 = ttk.Entry(self.top_frame, width=20, textvariable=gfap_th,
+                        font=tkFont.Font(family="Calibri", size=12))
 
         # set scalefactor
         scalefactor = tk.DoubleVar()
         scalefactor.set(settings.defaults["scalefactor"])
-        e11 = tk.Entry(self.top_frame, width=20, textvariable=scalefactor,
-                       font=tkFont.Font(family="Calibri", size=12))
+        e11 = ttk.Entry(self.top_frame, width=20, textvariable=scalefactor,
+                        font=tkFont.Font(family="Calibri", size=12))
 
         # debug mode?
         debug = tk.BooleanVar()
         debug.set(settings.defaults["debug"])
-        e12 = tk.Checkbutton(self.top_frame, text='', variable=debug,
-                             onvalue=True, offvalue=False,
-                             anchor='w')
+        e12 = ttk.Checkbutton(self.top_frame, text='', variable=debug,
+                              onvalue=True, offvalue=False)
 
         # prediction_cutoff
         prediction_cutoff = tk.DoubleVar()
@@ -281,9 +348,9 @@ class Application(tk.Frame):
             prediction_cutoff.set(settings.defaults['prediction_cutoff'])
         else:
             prediction_cutoff.set(0.5)
-        prediction_cutoff_entry = tk.Entry(self.top_frame, width=20,
-                                           textvariable=prediction_cutoff,
-                                           font=tkFont.Font(family="Calibri", size=12))
+        prediction_cutoff_entry = ttk.Entry(self.top_frame, width=20,
+                                            textvariable=prediction_cutoff,
+                                            font=tkFont.Font(family="Calibri", size=12))
 
         combo.grid(row=0, column=1, columnspan=3, sticky='w', pady=2)
         e1.grid(row=1, column=1, columnspan=3, sticky='w', pady=2)
@@ -294,44 +361,55 @@ class Application(tk.Frame):
         dapi_C_entry.grid(row=6, column=3, sticky='w', pady=2)
         e5.grid(row=7, column=1, sticky='w', pady=2)
         e6.grid(row=7, column=3, sticky='w', pady=2)
-        e7.grid(row=8, column=1, sticky='w', pady=2)
-        e8.grid(row=8, column=3, sticky='w', pady=2)
-        e9.grid(row=9, column=1, sticky='w', pady=2)
-        e10.grid(row=9, column=3, sticky='w', pady=2)
-        e11.grid(row=10, column=1, sticky='w', pady=2)
-        e12.grid(row=10, column=3, columnspan=3, sticky='w', pady=2)
-        prediction_cutoff_entry.grid(row=11, column=1, sticky='w', pady=2)
+        # EdU
+        e_EdUCh.grid(row=8, column=1, sticky='w', pady=2)
+        e_EdUg.grid(row=8, column=3, sticky='w', pady=2)
+        # Olig2
+        e_Olig2Ch.grid(row=9, column=1, sticky='w', pady=2)
+        e_Olig2g.grid(row=9, column=3, sticky='w', pady=2)
+        # mCherry
+        e_mCherryCh.grid(row=10, column=1, sticky='w', pady=2)
+        e_mCherryg.grid(row=10, column=3, sticky='w', pady=2)
+
+        e9.grid(row=11, column=1, sticky='w', pady=2)
+        e10.grid(row=11, column=3, sticky='w', pady=2)
+        e11.grid(row=12, column=1, sticky='w', pady=2)
+        e12.grid(row=12, column=3, columnspan=3, sticky='w', pady=2)
+        prediction_cutoff_entry.grid(row=13, column=1, sticky='w', pady=2)
 
         # start button
-        button2 = tk.Button(self.bottom_frame,
-                            text="Start",
-                            command=lambda: self.start_analysis(name=self.name.get(),
-                                                                folder_root=self.folder_root.get(),
-                                                                pattern=pattern.get(),
-                                                                dapi_ch=dapi_ch.get(),
-                                                                dapi_gamma=dapi_gamma.get(),
-                                                                dapi_blocksize=dapi_blocksize.get(),
-                                                                dapi_C=dapi_C.get(),
-                                                                o4_ch=o4_ch.get(),
-                                                                o4_gamma=o4_gamma.get(),
-                                                                edu_ch=edu_ch.get(),
-                                                                edu_gamma=edu_gamma.get(),
-                                                                gfap_ch=gfap_ch.get(),
-                                                                gfap_th=gfap_th.get(),
-                                                                scalefactor=scalefactor.get(),
-                                                                prediction_cutoff=prediction_cutoff.get(),
-                                                                debug=debug.get()),
-                            font=tkFont.Font(family="Calibri", size=12))
+        button2 = ttk.Button(self.bottom_frame,
+                             text="Start",
+                             command=lambda: self.start_analysis(name=self.name.get(),
+                                                                 folder_root=self.folder_root.get(),
+                                                                 pattern=pattern.get(),
+                                                                 dapi_ch=dapi_ch.get(),
+                                                                 dapi_gamma=dapi_gamma.get(),
+                                                                 dapi_blocksize=dapi_blocksize.get(),
+                                                                 dapi_C=dapi_C.get(),
+                                                                 o4_ch=o4_ch.get(),
+                                                                 o4_gamma=o4_gamma.get(),
+                                                                 edu_ch=edu_ch.get(),
+                                                                 edu_gamma=edu_gamma.get(),
+                                                                 olig2_ch=olig2_ch.get(),
+                                                                 olig2_gamma=olig2_gamma.get(),
+                                                                 mCherry_ch=mCherry_ch.get(),
+                                                                 mCherry_gamma=mCherry_gamma.get(),
+                                                                 gfap_ch=gfap_ch.get(),
+                                                                 gfap_th=gfap_th.get(),
+                                                                 scalefactor=scalefactor.get(),
+                                                                 prediction_cutoff=prediction_cutoff.get(),
+                                                                 debug=debug.get()))
         button2.pack(side="top")
 
         # define output console area
-        tk.Label(self.bottom_frame,
-                 text="""Output""",
-                 justify=tk.LEFT,
-                 anchor='n',
-                 font=tkFont.Font(family="Calibri", size=12)).pack(side='left', fill='y')
+        ttk.Label(self.bottom_frame,
+                  text="""Output""",
+                  justify=tk.LEFT,
+                  anchor='n',
+                  font=tkFont.Font(family="Calibri", size=12)).pack(side='left', fill='y')
         # add scroll bar
-        self.console_scrollbar = tk.Scrollbar(self.bottom_frame, orient=tk.VERTICAL)
+        self.console_scrollbar = ttk.Scrollbar(self.bottom_frame, orient=tk.VERTICAL)
         self.console_scrollbar.pack(side="right", fill='y')
         # add text console widget
         self.console = tk.Text(self.bottom_frame,
@@ -366,6 +444,10 @@ class Application(tk.Frame):
             o4_gamma: float = 1.0,
             edu_ch: int = -1,
             edu_gamma: float = 1.0,
+            olig2_ch: int = -1,
+            olig2_gamma: float = 1.0,
+            mCherry_ch: int = -1,
+            mCherry_gamma: float = 1.0,
             gfap_ch: int = -1,
             gfap_th: int = 1000,
             scalefactor: float = 1.0,
@@ -383,10 +465,14 @@ class Application(tk.Frame):
             dapi_ch,
             o4_ch,
             edu_ch,
+            olig2_ch,
+            mCherry_ch,
             gfap_ch,
             dapi_gamma,
             o4_gamma,
             edu_gamma,
+            olig2_gamma,
+            mCherry_gamma,
             gfap_th,
             scalefactor,
             prediction_cutoff,
@@ -406,6 +492,14 @@ class Application(tk.Frame):
         if edu_ch == -1:
             edu_ch = None
             self.console.insert("end", "\nSkipping EdU channel & analysis")
+
+        if olig2_ch == -1:
+            olig2_ch = None
+            self.console.insert("end", "\nSkipping Olig2 channel & analysis")
+
+        if mCherry_ch == -1:
+            mCherry_ch = None
+            self.console.insert("end", "\nSkipping NLS-mCherry channel & analysis")
 
         if gfap_ch == -1:
             gfap_ch = None
@@ -429,8 +523,12 @@ class Application(tk.Frame):
             # files = list(files[i] for i in random.sample(list(range(len(files))), 5))
 
             # select first two files to do manual count comparisons
-            self.console.insert("end", "\ndebug: selecting first two files to do manual count comparisons")
+            # self.console.insert("end", "\ndebug: selecting first two files to do manual count comparisons")
             files = list(files[i] for i in range(0, 2))
+
+            self.console.insert("end", "\ndebug: specific file hard encoded...")
+            debug_path = '/Users/frasersim/Library/CloudStorage/Box-Box/NewLabData/People/Greg/Nog Expan/Plate1(2.4.24)/Folder_20240204/EdUOlig2'
+            files = [{"path": debug_path, "name": "NogExpan_EduOlig2_Control_C5_ImageID-26729.vsi"}]
 
         results = []
 
@@ -483,11 +581,16 @@ class Application(tk.Frame):
                         o4_gamma=o4_gamma,
                         EdU_ch=edu_ch,
                         EdU_gamma=edu_gamma,
+                        Olig2_ch=olig2_ch,
+                        Olig2_gamma=olig2_gamma,
+                        mCherry_ch=mCherry_ch,
+                        mCherry_gamma=mCherry_gamma,
                         gfap_ch=gfap_ch,
                         gfap_th=gfap_th,
                         scalefactor=scalefactor,
                         debug=debug)
-                    sCI.processDAPI(threshold_method='th2', blocksize=dapi_blocksize, C=dapi_C)  # based on manual counts (see OneNote)
+                    sCI.processDAPI(threshold_method='th2', blocksize=dapi_blocksize,
+                                    C=dapi_C, debug=debug)  # based on manual counts (see OneNote)
 
                     if o4_ch is not None:
                         sCI.processCells()
@@ -497,8 +600,80 @@ class Application(tk.Frame):
                     if edu_ch is not None:
                         sCI.countEdUchannel(export_pdf)
 
+                    if olig2_ch is not None:
+                        sCI.countOlig2channel(export_pdf)
+
+                    if mCherry_ch is not None:
+                        sCI.countmCherrychannel(export_pdf)
+
                     if gfap_ch is not None:
                         sCI.countGfapchannel(export_pdf)
+
+                    if olig2_ch is not None and edu_ch is not None:
+                        print('count Olig2 and EdU double positive cells.')
+                        Olig2EdUpos_count, Olig2EdU_mask, Olig2EdU_watershed, \
+                            Olig2EdU_centroid_x, \
+                            Olig2EdU_centroid_y = sCI.countNuclearMarker(export_pdf,
+                                                                         name1='EdU',
+                                                                         channel1=sCI.EdU_ch,
+                                                                         gamma1=sCI.EdU_gamma,
+                                                                         name2='Olig2',
+                                                                         nucleiMask=sCI.Olig2_mask,
+                                                                         nucleiCount=sCI.Olig2pos_count,
+                                                                         nucleiWatershed=sCI.Olig2_watershed,
+                                                                         centroid_x=sCI.Olig2_centroid_x,
+                                                                         centroid_y=sCI.Olig2_centroid_y)
+                        print(f"Olig2 & EdU double positive count: {Olig2EdUpos_count}")
+
+                    if mCherry_ch is not None and edu_ch is not None:
+                        print('count mCherry and EdU double positive cells.')
+                        mCherryEdUpos_count, mCherryEdU_mask, mCherryEdU_watershed, \
+                            mCherryEdU_centroid_x, \
+                            mCherryEdU_centroid_y = sCI.countNuclearMarker(export_pdf,
+                                                                           name1='EdU',
+                                                                           channel1=sCI.EdU_ch,
+                                                                           gamma1=sCI.EdU_gamma,
+                                                                           name2='mCherry',
+                                                                           nucleiMask=sCI.mCherry_mask,
+                                                                           nucleiCount=sCI.mCherrypos_count,
+                                                                           nucleiWatershed=sCI.mCherry_watershed,
+                                                                           centroid_x=sCI.mCherry_centroid_x,
+                                                                           centroid_y=sCI.mCherry_centroid_y)
+                        print(f"mCherry & EdU double positive count: {mCherryEdUpos_count}")
+
+                    if olig2_ch is not None and mCherry_ch is not None:
+                        print('count Olig2 and mCherry double positive cells.')
+                        Olig2mCherrypos_count, Olig2mCherry_mask, Olig2mCherry_watershed, \
+                            Olig2mCherry_centroid_x, \
+                            Olig2mCherry_centroid_y = sCI.countNuclearMarker(export_pdf,
+                                                                             name1='Olig2',
+                                                                             channel1=sCI.Olig2_ch,
+                                                                             gamma1=sCI.Olig2_gamma,
+                                                                             name2='mCherry',
+                                                                             nucleiMask=sCI.mCherry_mask,
+                                                                             nucleiCount=sCI.mCherrypos_count,
+                                                                             nucleiWatershed=sCI.mCherry_watershed,
+                                                                             centroid_x=sCI.mCherry_centroid_x,
+                                                                             centroid_y=sCI.mCherry_centroid_y)
+                        print(f"mCherry & Olig2 double positive count: {Olig2mCherrypos_count}")
+
+                    if edu_ch is not None and olig2_ch is not None and mCherry_ch is not None:
+                        print('count EdU, mCherry and Olig2 triple positive cells.')
+                        EdUmCherryOlig2pos_count, EdUCherryOlig2_mask, EdUmCherryOlig2_watershed, \
+                            EdUmCherryOlig2_centroid_x, \
+                            EdUmCherryOlig2_centroid_y \
+                            = sCI.countNuclearMarker(export_pdf,
+                                                     name1='EdU',
+                                                     channel1=sCI.EdU_ch,
+                                                     gamma1=sCI.EdU_gamma,
+                                                     name2='mCherry+Olig2',
+                                                     nucleiMask=Olig2mCherry_mask,
+                                                     nucleiCount=Olig2mCherrypos_count,
+                                                     nucleiWatershed=Olig2mCherry_watershed,
+                                                     centroid_x=Olig2mCherry_centroid_x,
+                                                     centroid_y=Olig2mCherry_centroid_y
+                                                     )
+                        print(f"EdU, mCherry & Olig2 triple positive count: {EdUmCherryOlig2pos_count}")
 
                     if debug:
                         sCI.reportResults()
@@ -508,7 +683,13 @@ class Application(tk.Frame):
                             self.console.insert('end', f" O4 pos: {sCI.o4pos_count}.")
 
                         if edu_ch is not None:
-                            self.console.insert('end', f" EdU pos: {sCI.edupos_count}.")
+                            self.console.insert('end', f" EdU pos: {sCI.EdUpos_count}.")
+
+                        if olig2_ch is not None:
+                            self.console.insert('end', f" Olig2 pos: {sCI.Olig2pos_count}.")
+
+                        if mCherry_ch is not None:
+                            self.console.insert('end', f" mCherry pos: {sCI.mCherrypos_count}.")
 
                         if gfap_ch is not None:
                             self.console.insert('end', f" Gfap pos: {sCI.gfappos_count}.")
@@ -540,11 +721,31 @@ class Application(tk.Frame):
 
                     # add EdU counts
                     if edu_ch is not None:
-                        result['edupos_count'] = sCI.edupos_count
+                        result['edupos_count'] = sCI.EdUpos_count
+
+                    # add Olig2 counts
+                    if olig2_ch is not None:
+                        result['olig2pos_count'] = sCI.Olig2pos_count
+
+                    # add mCherry counts
+                    if mCherry_ch is not None:
+                        result['mCherrypos_count'] = sCI.mCherrypos_count
 
                     # add Gfap counts
                     if gfap_ch is not None:
                         result['gfappos_count'] = sCI.gfappos_count
+
+                    if olig2_ch is not None and edu_ch is not None:
+                        result['Olig2EdUpos_count'] = Olig2EdUpos_count
+
+                    if mCherry_ch is not None and edu_ch is not None:
+                        result['mCherryEdUpos_count'] = mCherryEdUpos_count
+
+                    if mCherry_ch is not None and olig2_ch is not None:
+                        result['Olig2mCherrypos_count'] = Olig2mCherrypos_count
+
+                    if edu_ch is not None and olig2_ch is not None and mCherry_ch is not None:
+                        result['EdUmCherryOlig2pos_count'] = EdUmCherryOlig2pos_count
 
                     results.append(result)
 
@@ -555,6 +756,11 @@ class Application(tk.Frame):
 
                 self.console.update()
                 self.console.yview("end")
+
+            # Done with File loop
+            self.console.insert("end", f"\nFinished analysis, exporting PDF file...")
+            self.console.update()
+            self.console.yview("end")
 
         # output results as csv
         import csv
