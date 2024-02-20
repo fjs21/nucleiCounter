@@ -131,25 +131,10 @@ def fix_unicode_filenames(folder):
 
 
 def parseFileName(imgFile):
-    """Extract stage, well and image position from file name."""
-    # imgFile_split = imgFile.split('_')
-    # if (imgFile_split[0].upper().find('PRE') > 0):
-    #     stage = "PRE"
-    # elif (imgFile_split[0].upper().find('POST') > 0):
-    #     stage = "POST"
-    # else:
-    #     stage = None
-    # well_position = imgFile_split[1].split('-')
-    # well = well_position[0]
-    # try:
-    #     position = well_position[1]
-    # except:
-    #     print(f"Error parsing file name: {imgFile}")
-    #     position = None
-
+    """Extract well name from file name."""
     import re
 
-    pattern = r'[A-Za-z]_[0-9]+_'
+    pattern = r'_[A-F][1-8]+_'
     matches = re.findall(pattern, imgFile)
     well = None
     if matches:
@@ -158,7 +143,7 @@ def parseFileName(imgFile):
         # Remove the "_" characters from the extracted code
         well = well.replace("_", "")
     else:
-        print("No well ID found.")
+        print(f"No well ID found for {imgFile}.")
 
     return well
 

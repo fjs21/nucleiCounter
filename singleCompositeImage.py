@@ -117,6 +117,8 @@ class singleCompositeImage:
             scalefactor: float = 1,
             debug: bool = False):
 
+        self.mCherry_mask = None
+        self.EdUpos_count = None
         self.mCherry_centroid_y = None
         self.mCherry_centroid_x = None
         self.mCherry_watershed = None
@@ -185,6 +187,13 @@ class singleCompositeImage:
 
         # load images
         self.images = self.loadImages()
+
+        imgSlices = len(self.images)
+        if max(value for value in (self.dapi_ch, self.o4_ch, self.EdU_ch, self.Olig2_ch, self.mCherry_ch,
+                                   self.gfap_ch) if value is not None) > (imgSlices - 1):
+            print(f"Not enough slices to process {self.imgFile} image.")
+            raise ValueError("Not enough slices to process image")
+
         # standardize scale
         if self.scalefactor != 1:
             self.scaleImages(scalefactor=scalefactor)
@@ -337,8 +346,8 @@ class singleCompositeImage:
     def imageThreshold(self, img, threshold_method, blocksize=11, C=2, debug=False, title=''):
         """IMAGE THRESHOLDING."""
         # based on - https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
-
-        print(f"blocksize = {blocksize}")
+        if debug:
+            print(f"{title} blocksize = {blocksize}")
 
         # img = cv.medianBlur(img,5)
         img_blur = cv.GaussianBlur(img, (5, 5), 0)
@@ -819,7 +828,7 @@ class singleCompositeImage:
         ax4.set_xlim([0, 255])
         ax4.set_yscale('log')
 
-        maintitle=f'Gamma Correction of {title}'
+        maintitle = f'Gamma Correction of {title}'
         fig.suptitle(maintitle)
         fig.tight_layout()
 

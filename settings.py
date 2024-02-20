@@ -32,7 +32,7 @@ class Settings:
         try:
             with open(filename) as f:
                 self.defaults = json.load(f)
-            print(self.defaults)
+            # print(self.defaults)
             if 'name' not in self.defaults:
                 self.defaults['name'] = 'default'
 

@@ -20,13 +20,42 @@ from commonFunctions import *
 from singleCompositeImage import singleCompositeImage
 
 # start JVM for compatibility with VSI files
-# print('JAVA_HOME =', os.environ['JAVA_HOME'])
 import javabridge
 import bioformats
 
 print('Python %s on %s' % (sys.version, sys.platform))
+print('JAVA_HOME =', os.environ['JAVA_HOME'])
 
+# initiate javabridge
 javabridge.start_vm(class_path=bioformats.JARS)
+
+
+def init_logger(jb):
+    """This is so that Javabridge doesn't spill out a lot of DEBUG messages
+    during runtime.
+    From CellProfiler/python-bioformats.
+    From https://github.com/pskeshu/microscoper/blob/master/microscoper/io.py
+    """
+    rootLoggerName = jb.get_static_field("org/slf4j/Logger",
+                                         "ROOT_LOGGER_NAME",
+                                         "Ljava/lang/String;")
+
+    rootLogger = jb.static_call("org/slf4j/LoggerFactory",
+                                "getLogger",
+                                "(Ljava/lang/String;)Lorg/slf4j/Logger;",
+                                rootLoggerName)
+
+    logLevel = jb.get_static_field("ch/qos/logback/classic/Level",
+                                   "WARN",
+                                   "Lch/qos/logback/classic/Level;")
+
+    jb.call(rootLogger,
+            "setLevel",
+            "(Lch/qos/logback/classic/Level;)V",
+            logLevel)
+
+
+init_logger(javabridge)
 
 settings = Settings()
 
@@ -206,7 +235,7 @@ class Application(ttk.Frame):
         """Now for the text entry and other boxes"""
 
         def selection_changed(event=None):
-            print("Selection changed")
+            # print("Selection changed")
             selected_value = combo.get()
 
             self.name.set(selected_value)
@@ -237,11 +266,11 @@ class Application(ttk.Frame):
             prediction_cutoff.set(settings.experiments[selected_value].get('prediction_cutoff', 0.5))
 
             debug.set(settings.experiments[selected_value].get('debug', 0))
-            print("Selected:", selected_value)
+            # print("Selected:", selected_value)
 
         self.name = tk.StringVar()
         experiments = list(settings.experiments)
-        print(experiments)
+        # print(experiments)
         self.name.set(settings.defaults["name"])
         combo = ttk.Combobox(self.top_frame, values=experiments,
                              width=80, textvariable=self.name,
@@ -595,6 +624,8 @@ class Application(ttk.Frame):
 
                 # parse file names
                 well = parseFileName(imgFile)
+                if debug:
+                    print(f"Well: {well}")
 
                 try:
                     sCI = singleCompositeImage(
@@ -635,7 +666,8 @@ class Application(ttk.Frame):
                         sCI.countGfapchannel(export_pdf)
 
                     if olig2_ch is not None and edu_ch is not None:
-                        print('count Olig2 and EdU double positive cells.')
+                        if debug:
+                            print('Counting Olig2 and EdU double positive cells...')
                         Olig2EdUpos_count, Olig2EdU_mask, Olig2EdU_watershed, \
                             Olig2EdU_centroid_x, \
                             Olig2EdU_centroid_y = sCI.countNuclearMarker(export_pdf,
@@ -648,10 +680,12 @@ class Application(ttk.Frame):
                                                                          nucleiWatershed=sCI.Olig2_watershed,
                                                                          centroid_x=sCI.Olig2_centroid_x,
                                                                          centroid_y=sCI.Olig2_centroid_y)
-                        print(f"Olig2 & EdU double positive count: {Olig2EdUpos_count}")
+                        if debug:
+                            print(f"Olig2 & EdU double positive count: {Olig2EdUpos_count}")
 
                     if mCherry_ch is not None and edu_ch is not None:
-                        print('count mCherry and EdU double positive cells.')
+                        if debug:
+                            print('Counting mCherry and EdU double positive cells...')
                         mCherryEdUpos_count, mCherryEdU_mask, mCherryEdU_watershed, \
                             mCherryEdU_centroid_x, \
                             mCherryEdU_centroid_y = sCI.countNuclearMarker(export_pdf,
@@ -664,10 +698,12 @@ class Application(ttk.Frame):
                                                                            nucleiWatershed=sCI.mCherry_watershed,
                                                                            centroid_x=sCI.mCherry_centroid_x,
                                                                            centroid_y=sCI.mCherry_centroid_y)
-                        print(f"mCherry & EdU double positive count: {mCherryEdUpos_count}")
+                        if debug:
+                            print(f"mCherry & EdU double positive count: {mCherryEdUpos_count}")
 
                     if olig2_ch is not None and mCherry_ch is not None:
-                        print('count Olig2 and mCherry double positive cells.')
+                        if debug:
+                            print('Counting Olig2 and mCherry double positive cells...')
                         Olig2mCherrypos_count, Olig2mCherry_mask, Olig2mCherry_watershed, \
                             Olig2mCherry_centroid_x, \
                             Olig2mCherry_centroid_y = sCI.countNuclearMarker(export_pdf,
@@ -680,10 +716,12 @@ class Application(ttk.Frame):
                                                                              nucleiWatershed=sCI.mCherry_watershed,
                                                                              centroid_x=sCI.mCherry_centroid_x,
                                                                              centroid_y=sCI.mCherry_centroid_y)
-                        print(f"mCherry & Olig2 double positive count: {Olig2mCherrypos_count}")
+                        if debug:
+                            print(f"mCherry & Olig2 double positive count: {Olig2mCherrypos_count}")
 
                     if edu_ch is not None and olig2_ch is not None and mCherry_ch is not None:
-                        print('count EdU, mCherry and Olig2 triple positive cells.')
+                        if debug:
+                            print('Counting EdU, mCherry and Olig2 triple positive cells...')
                         EdUmCherryOlig2pos_count, EdUCherryOlig2_mask, EdUmCherryOlig2_watershed, \
                             EdUmCherryOlig2_centroid_x, \
                             EdUmCherryOlig2_centroid_y \
@@ -698,26 +736,40 @@ class Application(ttk.Frame):
                                                      centroid_x=Olig2mCherry_centroid_x,
                                                      centroid_y=Olig2mCherry_centroid_y
                                                      )
-                        print(f"EdU, mCherry & Olig2 triple positive count: {EdUmCherryOlig2pos_count}")
+                        if debug:
+                            print(f"EdU, mCherry & Olig2 triple positive count: {EdUmCherryOlig2pos_count}")
 
                     if debug:
                         sCI.reportResults()
                         self.console.insert('end', f"\nimgFile: {sCI.imgFile} found {sCI.nucleiCount} DAPI+ nuclei.")
 
                         if o4_ch is not None:
-                            self.console.insert('end', f" O4 pos: {sCI.o4pos_count}.")
+                            self.console.insert('end', f" O4+: {sCI.o4pos_count}.")
 
                         if edu_ch is not None:
-                            self.console.insert('end', f" EdU pos: {sCI.EdUpos_count}.")
+                            self.console.insert('end', f" EdU+: {sCI.EdUpos_count}.")
 
                         if olig2_ch is not None:
-                            self.console.insert('end', f" Olig2 pos: {sCI.Olig2pos_count}.")
+                            self.console.insert('end', f" Olig2+: {sCI.Olig2pos_count}.")
 
                         if mCherry_ch is not None:
-                            self.console.insert('end', f" mCherry pos: {sCI.mCherrypos_count}.")
+                            self.console.insert('end', f" mCherry+: {sCI.mCherrypos_count}.")
 
                         if gfap_ch is not None:
-                            self.console.insert('end', f" Gfap pos: {sCI.gfappos_count}.")
+                            self.console.insert('end', f" Gfap+: {sCI.gfappos_count}.")
+
+                        if edu_ch is not None and olig2_ch is not None:
+                            self.console.insert('end', f" EdU+Olig2+: {Olig2EdUpos_count}.")
+
+                        if edu_ch is not None and mCherry_ch is not None:
+                            self.console.insert('end', f" EdU+mCherry+: {mCherryEdUpos_count}.")
+
+                        if olig2_ch is not None and mCherry_ch is not None:
+                            self.console.insert('end', f" Olig2+mCherry+: {Olig2EdUpos_count}.")
+
+                        if edu_ch is not None and olig2_ch is not None and mCherry_ch is not None:
+                            self.console.insert('end', f" EdU+Olig2+mCherry+: {EdUmCherryOlig2pos_count}.")
+
                         self.console.update()
 
                         # report result of nuclei count
@@ -773,9 +825,9 @@ class Application(ttk.Frame):
                     results.append(result)
 
                     self.console.insert("end", f"\nCompleted '{imgFile}'. {currentFileNumber} of {fileNumber} files.")
-                except Exception:
+                except Exception as e:
                     self.console.insert("end", f"\nFailed on path '{path}'. Image: {imgFile}")
-                    raise
+                    self.console.insert("end", f"\n{str(e)} on {imgFile}")
 
                 self.console.update()
                 self.console.yview("end")
