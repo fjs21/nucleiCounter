@@ -47,7 +47,7 @@ class Application(ttk.Frame):
         self.main_container.pack(side="top", fill="both", expand=True)
         self.top_frame = ttk.Frame(self.main_container)
         self.bottom_frame = ttk.Frame(self.main_container)
-        self.top_frame.pack(side="top", fill="x", expand=False)
+        self.top_frame.pack(side="top", fill="x", expand=True)
         self.bottom_frame.pack(side="bottom", fill="both", expand=True)
         self.create_widgets()
 
@@ -60,129 +60,131 @@ class Application(ttk.Frame):
 
         l1 = ttk.Label(self.top_frame,
                        text="""1. Select folder to process:""",
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l2 = ttk.Label(self.top_frame,
                        text="""2. Define pattern for image files:""",
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l3 = ttk.Label(self.top_frame,
                        text="""Choose slice for each antigen label, use -1 to indicate antigen not present.""",
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l4 = ttk.Label(self.top_frame,
                        text="""3. Which image slice contains the DAPI image?""",
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l5 = ttk.Label(self.top_frame,
                        text="""4. DAPI gamma = """,
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         dapi_blocksize_label = ttk.Label(self.top_frame,
                                          text="""DAPI blocksize: """,
                                          justify=tk.LEFT,
                                          anchor='w',
-                                         font=tkFont.Font(family="Calibri", size=12))
+                                         font=tkFont.Font(size=12))
 
         dapi_C_label = ttk.Label(self.top_frame,
                                  text="""DAPI C: """,
                                  justify=tk.LEFT,
                                  anchor='w',
-                                 font=tkFont.Font(family="Calibri", size=12))
+                                 font=tkFont.Font(size=12))
 
         l6 = ttk.Label(self.top_frame,
                        text="""5. Which image slice contains the O4 image?""",
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l7 = ttk.Label(self.top_frame,
                        text="""6. O4 gamma = """,
                        justify=tk.LEFT,
                        anchor='w',
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         l_EdUch = ttk.Label(self.top_frame,
                             text="""7. Which image slice contains the EdU image?""",
                             justify=tk.LEFT,
                             anchor='w',
-                            font=tkFont.Font(family="Calibri", size=12))
+                            font=tkFont.Font(size=12))
 
         l_EdUg = ttk.Label(self.top_frame,
                            text="""8. EdU gamma = """,
                            justify=tk.LEFT,
                            anchor='w',
-                           font=tkFont.Font(family="Calibri", size=12))
+                           font=tkFont.Font(size=12))
 
         l_Olig2Ch = ttk.Label(self.top_frame,
                               text="""Which image slice contains the Olig2 image?""",
                               justify=tk.LEFT,
                               anchor='w',
-                              font=tkFont.Font(family="Calibri", size=12))
+                              font=tkFont.Font(size=12))
 
         l_Olig2g = ttk.Label(self.top_frame,
                              text="""Olig2 gamma = """,
                              justify=tk.LEFT,
                              anchor='w',
-                             font=tkFont.Font(family="Calibri", size=12))
+                             font=tkFont.Font(size=12))
 
         l_mCherryCh = ttk.Label(self.top_frame,
                                 text="""Which image slice contains the NLS mCherry image?""",
                                 justify=tk.LEFT,
                                 anchor='w',
-                                font=tkFont.Font(family="Calibri", size=12))
+                                font=tkFont.Font(size=12))
 
         l_mCherryg = ttk.Label(self.top_frame,
                                text="""NLS mCherry gamma = """,
                                justify=tk.LEFT,
                                anchor='w',
-                               font=tkFont.Font(family="Calibri", size=12))
+                               font=tkFont.Font(size=12))
 
         l10 = ttk.Label(self.top_frame,
                         text="""9. Which image slice contains the Gfap image?""",
                         justify=tk.LEFT,
                         anchor='w',
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         l11 = ttk.Label(self.top_frame,
                         text="""10. Gfap threshold = """,
                         justify=tk.LEFT,
                         anchor='w',
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         l12 = ttk.Label(self.top_frame,
                         text="""11. Scalefactor (1.0 is equivalent to 1.5385 pixels per 1.0 μm) = """,
                         justify=tk.LEFT,
                         anchor='w',
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         l13 = ttk.Label(self.top_frame,
                         text="""Enable debug?""",
                         anchor='e',
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         prediction_cutoff_label = ttk.Label(self.top_frame,
                                             text="""O4 Keras Model Prediction cutoff:""",
                                             anchor='e',
-                                            font=tkFont.Font(family="Calibri", size=12))
+                                            font=tkFont.Font(size=12))
 
         n1.grid(row=0, column=0, sticky='w', pady=2)
         l1.grid(row=1, column=0, sticky='w', pady=2)
         l2.grid(row=2, column=0, sticky='w', pady=2)
-        l3.grid(row=3, column=0, sticky='w', pady=2)
+
+        l3.grid(row=3, column=0, columnspan=4, sticky='ew', pady=2)
+        # DAPI
         l4.grid(row=4, column=0, sticky='w', pady=2)
         l5.grid(row=4, column=2, sticky='w', pady=2)
         dapi_blocksize_label.grid(row=5, column=2, sticky='e', pady=2)
         dapi_C_label.grid(row=6, column=2, sticky='e', pady=2)
-
+        # O4
         l6.grid(row=7, column=0, sticky='w', pady=2)
         l7.grid(row=7, column=2, sticky='w', pady=2)
         # EdU
@@ -243,7 +245,7 @@ class Application(ttk.Frame):
         self.name.set(settings.defaults["name"])
         combo = ttk.Combobox(self.top_frame, values=experiments,
                              width=80, textvariable=self.name,
-                             font=tkFont.Font(family="Calibri", size=14))
+                             font=tkFont.Font(size=14))
         combo.bind("<<ComboboxSelected>>", selection_changed)
 
         e1 = ttk.Frame(self.top_frame)
@@ -254,60 +256,60 @@ class Application(ttk.Frame):
         self.folder_root = tk.StringVar()
         self.folder_root.set(settings.defaults["root"])
         ttk.Entry(e1, width=80, textvariable=self.folder_root,
-                  font=tkFont.Font(family="Calibri", size=12)).pack(side=tk.LEFT)
+                  font=tkFont.Font(size=12)).pack(side=tk.LEFT, fill="x", expand=True)
 
         # set file pattern
         pattern = tk.StringVar()
         pattern.set(settings.defaults["pattern"])
         e2 = ttk.Entry(self.top_frame, width=20, textvariable=pattern,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set DAPI channel
         dapi_ch = tk.IntVar()
         dapi_ch.set(settings.defaults["dapi_ch"])
         e3 = ttk.Entry(self.top_frame, width=20, textvariable=dapi_ch,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set DAPI gamma
         dapi_gamma = tk.DoubleVar()
         dapi_gamma.set(settings.defaults["dapi_gamma"])
         e4 = ttk.Entry(self.top_frame, width=20, textvariable=dapi_gamma,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set DAPI blocksize
         dapi_blocksize = tk.IntVar()
         dapi_blocksize.set(11)  # need to be incorporated into settings
         dapi_blocksize_entry = ttk.Entry(self.top_frame, width=20, textvariable=dapi_blocksize,
-                                         font=tkFont.Font(family="Calibri", size=12))
+                                         font=tkFont.Font(size=12))
         # set DAPI C
         dapi_C = tk.IntVar()
         dapi_C.set(2)
         dapi_C_entry = ttk.Entry(self.top_frame, width=20, textvariable=dapi_C,
-                                 font=tkFont.Font(family="Calibri", size=12))
+                                 font=tkFont.Font(size=12))
 
         # set O4 channel
         o4_ch = tk.IntVar()
         o4_ch.set(settings.defaults["o4_ch"])
         e5 = ttk.Entry(self.top_frame, width=20, textvariable=o4_ch,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set O4 gamma
         o4_gamma = tk.DoubleVar()
         o4_gamma.set(settings.defaults["o4_gamma"])
         e6 = ttk.Entry(self.top_frame, width=20, textvariable=o4_gamma,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set EdU channel
         edu_ch = tk.IntVar()
         edu_ch.set(settings.defaults["edu_ch"])
         e_EdUCh = ttk.Entry(self.top_frame, width=20, textvariable=edu_ch,
-                            font=tkFont.Font(family="Calibri", size=12))
+                            font=tkFont.Font(size=12))
 
         # set EdU gamma
         edu_gamma = tk.DoubleVar()
         edu_gamma.set(settings.defaults["edu_gamma"])
         e_EdUg = ttk.Entry(self.top_frame, width=20, textvariable=edu_gamma,
-                           font=tkFont.Font(family="Calibri", size=12))
+                           font=tkFont.Font(size=12))
 
         # set Olig2 channel
         olig2_ch = tk.IntVar()
@@ -316,14 +318,14 @@ class Application(ttk.Frame):
         else:
             olig2_ch.set(-1)
         e_Olig2Ch = ttk.Entry(self.top_frame, width=20, textvariable=olig2_ch,
-                              font=tkFont.Font(family="Calibri", size=12))
+                              font=tkFont.Font(size=12))
 
         # set Olig2 gamma
         olig2_gamma = tk.DoubleVar()
         if "olig2_gamma" in settings.defaults:
             olig2_gamma.set(settings.defaults["olig2_gamma"])
         e_Olig2g = ttk.Entry(self.top_frame, width=20, textvariable=olig2_gamma,
-                             font=tkFont.Font(family="Calibri", size=12))
+                             font=tkFont.Font(size=12))
 
         # set mCherry channel
         mCherry_ch = tk.IntVar()
@@ -332,32 +334,32 @@ class Application(ttk.Frame):
         else:
             mCherry_ch.set(-1)
         e_mCherryCh = ttk.Entry(self.top_frame, width=20, textvariable=mCherry_ch,
-                                font=tkFont.Font(family="Calibri", size=12))
+                                font=tkFont.Font(size=12))
 
         # set EdU gamma
         mCherry_gamma = tk.DoubleVar()
         if "mCherry_gamma" in settings.defaults:
             mCherry_gamma.set(settings.defaults["mCherry_gamma"])
         e_mCherryg = ttk.Entry(self.top_frame, width=20, textvariable=mCherry_gamma,
-                               font=tkFont.Font(family="Calibri", size=12))
+                               font=tkFont.Font(size=12))
 
         # set Gfap channel
         gfap_ch = tk.IntVar()
         gfap_ch.set(settings.defaults["gfap_ch"])
         e9 = ttk.Entry(self.top_frame, width=20, textvariable=gfap_ch,
-                       font=tkFont.Font(family="Calibri", size=12))
+                       font=tkFont.Font(size=12))
 
         # set Gfap threshold
         gfap_th = tk.IntVar()
         gfap_th.set(settings.defaults["gfap_th"])
         e10 = ttk.Entry(self.top_frame, width=20, textvariable=gfap_th,
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         # set scalefactor
         scalefactor = tk.DoubleVar()
         scalefactor.set(settings.defaults["scalefactor"])
         e11 = ttk.Entry(self.top_frame, width=20, textvariable=scalefactor,
-                        font=tkFont.Font(family="Calibri", size=12))
+                        font=tkFont.Font(size=12))
 
         # debug mode?
         debug = tk.BooleanVar()
@@ -373,15 +375,20 @@ class Application(ttk.Frame):
             prediction_cutoff.set(0.5)
         prediction_cutoff_entry = ttk.Entry(self.top_frame, width=20,
                                             textvariable=prediction_cutoff,
-                                            font=tkFont.Font(family="Calibri", size=12))
+                                            font=tkFont.Font(size=12))
 
-        combo.grid(row=0, column=1, columnspan=3, sticky='w', pady=2)
-        e1.grid(row=1, column=1, columnspan=3, sticky='w', pady=2)
-        e2.grid(row=2, column=1, columnspan=3, sticky='w', pady=2)
+        # Experiment
+        combo.grid(row=0, column=1, columnspan=3, sticky='ew', pady=2)
+        # Folder
+        e1.grid(row=1, column=1, columnspan=3, sticky='ew', pady=2)
+        # File type
+        e2.grid(row=2, column=1, sticky='w', pady=2)
+        # DAPI
         e3.grid(row=4, column=1, sticky='w', pady=2)
         e4.grid(row=4, column=3, sticky='w', pady=2)
         dapi_blocksize_entry.grid(row=5, column=3, sticky='w', pady=2)
         dapi_C_entry.grid(row=6, column=3, sticky='w', pady=2)
+        # O4
         e5.grid(row=7, column=1, sticky='w', pady=2)
         e6.grid(row=7, column=3, sticky='w', pady=2)
         # EdU
@@ -397,8 +404,8 @@ class Application(ttk.Frame):
         e9.grid(row=11, column=1, sticky='w', pady=2)
         e10.grid(row=11, column=3, sticky='w', pady=2)
         e11.grid(row=12, column=1, sticky='w', pady=2)
-        e12.grid(row=12, column=3, columnspan=3, sticky='w', pady=2)
-        prediction_cutoff_entry.grid(row=13, column=1, sticky='w', pady=2)
+        e12.grid(row=12, column=3, sticky='w', pady=2)
+        prediction_cutoff_entry.grid(row=13, column=1, columnspan=1, sticky='w', pady=2)
 
         # start button
         button2 = ttk.Button(self.bottom_frame,
@@ -430,14 +437,14 @@ class Application(ttk.Frame):
                   text="""Output""",
                   justify=tk.LEFT,
                   anchor='n',
-                  font=tkFont.Font(family="Calibri", size=12)).pack(side='left', fill='y')
+                  font=tkFont.Font(size=12)).pack(side='left', fill='y')
         # add scroll bar
         self.console_scrollbar = ttk.Scrollbar(self.bottom_frame, orient=tk.VERTICAL)
         self.console_scrollbar.pack(side="right", fill='y')
         # add text console widget
         self.console = tk.Text(self.bottom_frame,
                                yscrollcommand=self.console_scrollbar,
-                               font=tkFont.Font(family="Calibri", size=12))
+                               font=tkFont.Font(size=12))
         self.console.pack(side="top", fill="both", expand=True)
         self.console.bind("<Key>", lambda e: "break")
         # assign scroll bar to console yview
@@ -445,7 +452,7 @@ class Application(ttk.Frame):
         # add progress bar
         self.progress = Progressbar(self.bottom_frame,
                                     length=200, orient=tk.HORIZONTAL, mode='determinate')
-        self.progress.pack(side="bottom", fill="y", expand=True)
+        self.progress.pack(side="bottom")
 
     def select_folder(self):
         import os
@@ -790,10 +797,27 @@ class Application(ttk.Frame):
         self.console.insert("end", '\nAll Done')
 
 
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+
 # Starts application.
 root = tk.Tk()
-root.geometry('+100+100')
-root.resizable(width=False, height=False)
+
+width = 1200
+height = 900
+
+root.minsize(width=width, height=height)
+style = ttk.Style()
+style.theme_use("aqua")
 app = Application(master=root)
+center_window(root, width, height)
+
 app.mainloop()
 javabridge.kill_vm()
