@@ -1,4 +1,13 @@
+import sys
 import tkinter as tk
+
+# tkmacosx attempts to fix problems with unresponsive UI on macOS
+import platform
+
+if platform.system() == "Darwin":  # Check if the system is macOS
+    print('Importing tkmacosx')
+    import tkmacosx
+
 from tkinter import ttk
 import tkinter.font as tkFont
 import tkinter.filedialog as fileDialog
@@ -14,6 +23,8 @@ from singleCompositeImage import singleCompositeImage
 # print('JAVA_HOME =', os.environ['JAVA_HOME'])
 import javabridge
 import bioformats
+
+print('Python %s on %s' % (sys.version, sys.platform))
 
 javabridge.start_vm(class_path=bioformats.JARS)
 
@@ -42,12 +53,10 @@ class Application(ttk.Frame):
 
     def create_widgets(self):
         """Creates widgets on initial window."""
-        style = ttk.Style()
-        style.theme_use('aqua')
-
         n1 = ttk.Label(self.top_frame,
                        text="""Experiment Name""",
-                       font=tkFont.Font(family="Calibri", size=14))
+                       font=tkFont.Font(size=14))
+        n1.focus_set()
 
         l1 = ttk.Label(self.top_frame,
                        text="""1. Select folder to process:""",
@@ -194,23 +203,37 @@ class Application(ttk.Frame):
 
         """Now for the text entry and other boxes"""
 
-        def selection_changed():
+        def selection_changed(event=None):
             print("Selection changed")
             selected_value = combo.get()
 
             self.name.set(selected_value)
+            # retrieve values from other experiment
+
             self.folder_root.set(settings.experiments[selected_value]['root'])
             pattern.set(settings.experiments[selected_value]['pattern'])
+            # DAPI
             dapi_ch.set(settings.experiments[selected_value].get('dapi_ch', 0))
             dapi_gamma.set(settings.experiments[selected_value].get('dapi_gamma', 1.0))
+            # O4
             o4_ch.set(settings.experiments[selected_value].get('o4_ch', -1))
             o4_gamma.set(settings.experiments[selected_value].get('o4_gamma', 1.0))
+            # EdU
             edu_ch.set(settings.experiments[selected_value].get('edu_ch', -1))
             edu_gamma.set(settings.experiments[selected_value].get('edu_gamma', 1.0))
+            # Olig2
+            olig2_ch.set(settings.experiments[selected_value].get('olig2_ch', -1))
+            olig2_gamma.set(settings.experiments[selected_value].get('olig2_gamma', 1.0))
+            # mCherry
+            mCherry_ch.set(settings.experiments[selected_value].get('mCherry_ch', -1))
+            mCherry_gamma.set(settings.experiments[selected_value].get('mCherry_gamma', 1.0))
+            # Gfap
             gfap_ch.set(settings.experiments[selected_value].get('gfap_ch', -1))
             gfap_th.set(settings.experiments[selected_value].get('gfap_th', 1000))
+
             scalefactor.set(settings.experiments[selected_value].get('scalefactor', 1))
             prediction_cutoff.set(settings.experiments[selected_value].get('prediction_cutoff', 0.5))
+
             debug.set(settings.experiments[selected_value].get('debug', 0))
             print("Selected:", selected_value)
 
@@ -523,12 +546,12 @@ class Application(ttk.Frame):
             # files = list(files[i] for i in random.sample(list(range(len(files))), 5))
 
             # select first two files to do manual count comparisons
-            # self.console.insert("end", "\ndebug: selecting first two files to do manual count comparisons")
+            self.console.insert("end", "\ndebug: selecting first two files to do manual count comparisons")
             files = list(files[i] for i in range(0, 2))
 
-            self.console.insert("end", "\ndebug: specific file hard encoded...")
-            debug_path = '/Users/frasersim/Library/CloudStorage/Box-Box/NewLabData/People/Greg/Nog Expan/Plate1(2.4.24)/Folder_20240204/EdUOlig2'
-            files = [{"path": debug_path, "name": "NogExpan_EduOlig2_Control_C5_ImageID-26729.vsi"}]
+            # self.console.insert("end", "\ndebug: specific file hard encoded...")
+            # debug_path = '/Users/frasersim/Library/CloudStorage/Box-Box/NewLabData/People/Greg/Nog Expan/Plate1(2.4.24)/Folder_20240204/EdUOlig2'
+            # files = [{"path": debug_path, "name": "NogExpan_EduOlig2_Control_C5_ImageID-26729.vsi"}]
 
         results = []
 
@@ -564,12 +587,7 @@ class Application(ttk.Frame):
                 imgFile = file['name']
 
                 # parse file names
-                try:
-                    stage, well, position = parseFileName(imgFile)
-                except Exception:
-                    print(f"\nCould not parseFileName '{path}'. Image: {imgFile}")
-                    print(Exception)
-                    stage = None
+                well = parseFileName(imgFile)
 
                 try:
                     sCI = singleCompositeImage(
@@ -701,11 +719,9 @@ class Application(ttk.Frame):
                         'imgFile': sCI.imgFile,
                         'nucleiCount': sCI.nucleiCount}
 
-                    # add details parsed from fileName
-                    if stage is not None:
-                        result['stage'] = stage
+                    # add well details parsed from fileName
+                    if well is not None:
                         result['well'] = well
-                        result['position'] = position
 
                     # add O4 counts
                     if o4_ch is not None:
