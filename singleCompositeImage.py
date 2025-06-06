@@ -957,26 +957,34 @@ class singleCompositeImage:
         gfap_count = 0
         gfap_intensities = []
         for i in range(2, np.max(self.nucleiMarkers)):
-            img[self.nucleiMarkers == i] = [0, 0, 255]
+            # define empty array the same size as the image
             gfap_mask = np.zeros(self.nucleiMarkers.shape, dtype="uint8")
+            # find nuclei mask for cell
             gfap_mask[self.nucleiMarkers == i] = 1
-
+            # dilate nuclei mask to incorporate surrounding cytoplasm
             gfap_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (30, 30))
             gfap_mask = cv.dilate(gfap_mask, gfap_kernel)
-
+            # calculate mean pixel intensity for cell
             gfap_intensity = np.mean(gfap_image[gfap_mask == 1])
+            # append to list of mean pixel intensity
             gfap_intensities.append(gfap_intensity)
 
+            # test is mean is greater than threshold set by user
             if gfap_intensity > self.gfap_th:
-                # positive cell
-                img[self.nucleiMarkers == i] = [255, 0, 0]
+                # color positive cell red
+                img[gfap_mask == 1] = [255, 0, 0]
                 gfap_count += 1
+            else:
+                # color negative cells blue
+                img[gfap_mask == 1] = [0,0,255]
 
         if self.debug:
             plt.hist(gfap_intensities, bins=50)
+            plt.suptitle(f"{self.path}\\{self.imgFile}")
+            plt.title("Histogram of mean per cell intensities in GFAP channel")
             plt.show()
 
-            showImages([self.rgb, img])
+            showImages([self.rgb, img], titles=["RGB","GFAP masks"],maintitle="GFAP analysis")
 
         self.gfappos_count = gfap_count
 

@@ -134,7 +134,7 @@ def parseFileName(imgFile):
     """Extract well name from file name."""
     import re
 
-    pattern = r'_[A-F][1-8]+_'
+    pattern = r'_[A-F][0-9]+_'
     matches = re.findall(pattern, imgFile)
     well = None
     if matches:

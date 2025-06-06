@@ -608,7 +608,12 @@ class Application(ttk.Frame):
         currentFileNumber = 0
         i = 100 / fileNumber
 
-        with PdfPages(fullPath(folder_root, 'results_nucleiCounter.pdf')) as export_pdf:
+        if debug:
+            pdfFileName = 'results_nucleiCounter_debug.pdf'
+        else:
+            pdfFileName = 'results_nucleiCounter.pdf'
+
+        with PdfPages(fullPath(folder_root, pdfFileName)) as export_pdf:
 
             for file in files:
 
@@ -839,7 +844,11 @@ class Application(ttk.Frame):
 
         # output results as csv
         import csv
-        filename = fullPath(folder_root, 'results_nucleiCounter.csv')
+        if debug:
+            resultsFileName = 'results_nucleiCounter_debug.csv'
+        else:
+            resultsFileName = 'results_nucleiCounter.csv'
+        filename = fullPath(folder_root, resultsFileName)
         with open(filename, 'w', newline='') as f:
             w = csv.DictWriter(f, results[0].keys())
             w.writeheader()
