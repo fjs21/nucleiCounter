@@ -2,6 +2,15 @@
 TEST: This file will use the annotations in an annotations.json file in
 an experimental folder to train a keras model using the local computer
 """
+"""
+GUI-based tool to consolidate image data and train a Keras CNN model
+to classify O4+ versus O4− cells using annotations.
+
+Features:
+- Loads cell annotations from annotations.json
+- Organizes image data into train/validation/test splits
+- Trains CNN model with augmentation, class balancing, and evaluation
+"""
 import sys
 import tkinter as tk
 from tkinter import ttk
@@ -55,6 +64,10 @@ class Application(tk.Frame):
         self.test_o4neg_dir = None
         self.test_o4pos_dir = None
 
+        # New model parameter variables
+        self.filters = tk.StringVar(value='32,64,128,128')
+        self.dropout = tk.StringVar(value='0.5')
+
         # initialize for widgets
         self.experiment = None
         self.marker = None
@@ -105,11 +118,38 @@ class Application(tk.Frame):
                        anchor='e',
                        font=tkFont.Font(family="Calibri", size=12))
 
+        # New model parameter input rows
+        filters_label = tk.Label(self.top_frame, text="Conv layer filters (comma-separated):", anchor='w',
+                                 font=tkFont.Font(family="Calibri", size=12))
+        filters_entry = tk.Entry(self.top_frame, width=20, textvariable=self.filters,
+                                 font=tkFont.Font(family='Calibri', size=12))
+
+        dropout_label = tk.Label(self.top_frame, text="Dropout rate (0.0 - 1.0):", anchor='w',
+                                 font=tkFont.Font(family="Calibri", size=12))
+        dropout_entry = tk.Entry(self.top_frame, width=20, textvariable=self.dropout,
+                                 font=tkFont.Font(family='Calibri', size=12))
+
+        # Help label for model parameters
+        help_label = tk.Label(self.top_frame,
+            text="""Adjust model parameters only if you want to experiment with the CNN architecture.\n
+- Conv filters: affects depth of feature maps in successive layers (default: 32,64,128,128)\n
+- Dropout: controls regularization to reduce overfitting (default: 0.5)\n
+For typical use, leave these settings unchanged.""",
+            justify=tk.LEFT,
+            anchor='w',
+            fg='gray',
+            font=tkFont.Font(family="Calibri", size=10))
+        help_label.grid(row=7, column=0, columnspan=2, sticky='w', pady=(4, 10))
+
         experiment_label.grid(row=0, column=0, sticky='w', pady=2)
         marker_label.grid(row=1, column=0, sticky='w', pady=2)
         validation_label.grid(row=2, column=0, sticky='w', pady=2)
         test_label.grid(row=3, column=0, sticky='w', pady=2)
         debug_label.grid(row=4, column=0, sticky='w', pady=2)
+        filters_label.grid(row=5, column=0, sticky='w', pady=2)
+        filters_entry.grid(row=5, column=1, sticky='w', pady=2)
+        dropout_label.grid(row=6, column=0, sticky='w', pady=2)
+        dropout_entry.grid(row=6, column=1, sticky='w', pady=2)
 
         self.experiment = tk.StringVar()
         experiments = list(settings.experiments)
@@ -193,7 +233,10 @@ class Application(tk.Frame):
         sys.stdout = text_redirector
 
     def setupLocalFolders(self, base_dir, empty: bool = False):
-
+        """
+        Creates directory structure for train/validation/test datasets with O4+ and O4− subfolders.
+        If 'empty' is True, existing folders are deleted and recreated.
+        """
         # define subdirectories for training, validation and test
         self.train_dir = os.path.join(base_dir, 'train')
         self.validation_dir = os.path.join(base_dir, 'validation')
@@ -221,8 +264,10 @@ class Application(tk.Frame):
             os.mkdir(self.test_o4pos_dir)
 
     def start_analysis(self, export: bool = True, debug: bool = False):
-        """ Run analysis - process folder for presence of count markers"""
-
+        """
+        Parses annotations.json for the selected experiment and distributes cell images
+        into training, validation, and test folders based on their O4 annotation status.
+        """
         print(f"Starting local consolidation of images for model training & validation.")
 
         self.setupLocalFolders(base_dir, empty=True)
@@ -231,10 +276,14 @@ class Application(tk.Frame):
 
         folder_root = settings.experiments[experiment]['root']
 
-        # load annotations
-        filename = fullPath(folder_root, 'annotations.json')
-        with open(filename, 'r') as f:
-            annotations = json.load(f)
+        # load annotations with error handling
+        try:
+            filename = fullPath(folder_root, 'annotations.json')
+            with open(filename, 'r') as f:
+                annotations = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading annotations.json: {e}")
+            return
 
         train_o4pos_i = train_o4neg_i = 0
         val_o4pos_i = val_o4neg_i = 0
@@ -312,34 +361,51 @@ class Application(tk.Frame):
         print("**********************************")
 
     def train_model(self):
+        """
+        Builds and trains a convolutional neural network (CNN) using Keras to classify
+        whether individual cell-centered images are O4+ or O4−.
+
+        Steps:
+        - Builds model with batch normalization and dropout
+        - Loads training and validation data with augmentation
+        - Computes class weights to handle imbalance
+        - Trains model and evaluates on test data with metrics
+        - Saves model and training results
+        """
 
         self.setupLocalFolders(base_dir, empty=False)
         root_folder = settings.experiments[self.experiment.get()]['root']
 
         from keras import models
         from keras import layers
-        from keras import optimizers
-        from keras.preprocessing.image import ImageDataGenerator
+        from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.preprocessing.image import ImageDataGenerator
         from keras.callbacks import EarlyStopping
+        from keras.metrics import AUC, Precision, Recall
 
-        # Keras model
+        # Parse model parameters from GUI
+        filter_list = [int(f.strip()) for f in self.filters.get().split(',')]
+        dropout_rate = float(self.dropout.get())
+
+        # Define CNN model architecture with dynamic filters and dropout
         model = models.Sequential()
-        model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3)))
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Dropout(0.25))
+        model.add(layers.Input(shape=(128, 128, 3)))
+        for f in filter_list:
+            model.add(layers.Conv2D(f, (3, 3)))
+            model.add(layers.BatchNormalization())
+            model.add(layers.Activation('relu'))
+            model.add(layers.MaxPooling2D((2, 2)))
+
         model.add(layers.Flatten())
-        model.add(layers.Dense(128, activation='relu'))
-        model.add(layers.Dropout(0.5))
+        model.add(layers.Dropout(dropout_rate))
+        model.add(layers.Dense(512, activation='relu'))
         model.add(layers.Dense(1, activation='sigmoid'))
-        model.compile(optimizer=optimizers.Adam(),
+        model.compile(optimizer=Adam(learning_rate=1e-4),
                       loss='binary_crossentropy',
-                      metrics=['acc'])
+                      metrics=['accuracy', Precision(), Recall(), AUC()])
         print(model.summary())
 
+        # Set up data generators with augmentation for training and rescaling for validation
         train_datagen = ImageDataGenerator(
             rescale=1. / 255,
             rotation_range=90,
@@ -350,6 +416,7 @@ class Application(tk.Frame):
             rescale=1. / 255)
 
         print("Setup training dataset folder.")
+        # Create data loaders from image directories
         train_generator = train_datagen.flow_from_directory(
             self.train_dir,
             target_size=(128, 128),
@@ -363,38 +430,51 @@ class Application(tk.Frame):
             batch_size=batch_size,
             class_mode='binary')
 
+        # Compute class weights to address O4+ underrepresentation
+        from sklearn.utils.class_weight import compute_class_weight
+        import numpy as np
+
+        train_labels = train_generator.classes
+        class_weights = compute_class_weight(
+            class_weight='balanced',
+            classes=np.unique(train_labels),
+            y=train_labels)
+        class_weight_dict = dict(enumerate(class_weights))
+        print("Class weights:", class_weight_dict)
+
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
         print("****************")
         print("Fitting model...")
+        # Train the model using class weights and early stopping
         history = model.fit(
             train_generator,
-            # steps_per_epoch=int(5 * train_size / batch_size),  # oversample 5x
-            # steps_per_epoch=len(train_generator),
             epochs=epochs,
             validation_data=validation_generator,
             validation_steps=len(validation_generator),
+            class_weight=class_weight_dict,
             callbacks=[early_stopping])
         print("Done.")
         print("****************")
 
+        # Save the trained model
         model.save(os.path.join(root_folder, settings.kerasModel))
 
-        acc = history.history['acc']
-        val_acc = history.history['val_acc']
+        acc = history.history['accuracy']
+        val_acc = history.history['val_accuracy']
         loss = history.history['loss']
         val_loss = history.history['val_loss']
 
-        # output results as csv
+        # Write training history to CSV file
         import csv
         filename = os.path.join(root_folder, 'KerasModelFit_results_' + settings.kerasModel + '.csv')
         with open(filename, 'w', newline='') as f:
             w = csv.writer(f)
-            w.writerow(['acc', 'val_acc', 'loss', 'val_loss'])
-            for i in range(len(history.history['acc'])):
+            w.writerow(['accuracy', 'val_accuracy', 'loss', 'val_loss'])
+            for i in range(len(history.history['accuracy'])):
                 w.writerow([acc[i], val_acc[i], loss[i], val_loss[i]])
 
-        # Evaluate model
+        # Prepare test data generator
         print("****************")
         print("Evaluating model...")
         test_datagen = ImageDataGenerator(rescale=1. / 255)
@@ -406,8 +486,36 @@ class Application(tk.Frame):
             class_mode='binary')
         print("Done.")
 
+        # Evaluate model on test data and output performance
         test_loss, test_acc = model.evaluate(test_generator, steps=50)
-        print(f"Test accuracy (%): {test_acc}")
+        # Advanced evaluation: confusion matrix and ROC-AUC
+        from sklearn.metrics import confusion_matrix, roc_auc_score
+
+        y_pred_probs = model.predict(test_generator, steps=50)
+        y_pred = (y_pred_probs > 0.5).astype(int).flatten()
+        y_true = test_generator.classes[:len(y_pred)]
+
+        print("Confusion Matrix:")
+        cm = confusion_matrix(y_true, y_pred)
+        print(cm)
+        print("ROC-AUC:", roc_auc_score(y_true, y_pred_probs[:len(y_true)]))
+
+        # Save confusion matrix to CSV
+        import pandas as pd
+        cm_df = pd.DataFrame(cm, index=['O4-', 'O4+'], columns=['Predicted O4-', 'Predicted O4+'])
+        cm_df.to_csv(os.path.join(root_folder, 'confusion_matrix.csv'))
+
+        # Save confusion matrix as image
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        plt.figure(figsize=(6,4))
+        sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.tight_layout()
+        plt.savefig(os.path.join(root_folder, 'confusion_matrix.png'))
+        plt.close()
 
 
 # Starts application.
