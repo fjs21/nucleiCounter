@@ -19,6 +19,7 @@ from tkinter.ttk import Progressbar
 
 import json
 import shutil
+from PIL import Image
 
 from settings import Settings
 from commonFunctions import *
@@ -30,14 +31,16 @@ settings = Settings()
 base_dir = 'o4modelimages'
 val_size_default = 500
 test_size_default = 200
-batch_size = 200
-epochs = 100
+batch_size = 64 # 200
+epochs = 100 # 100
 
 
 class TextRedirector:
     """ This class allows capturing of stdout into console in GUI """
     def __init__(self, text_widget):
         self.text_widget = text_widget
+        self.text_widget.bind("<Control-c>", lambda e: self.copy_selection(e))
+        self.text_widget.bind("<Command-c>", lambda e: self.copy_selection(e))
 
     def write(self, text):
         self.text_widget.insert('end', text)
@@ -46,6 +49,21 @@ class TextRedirector:
 
     def flush(self):
         pass
+
+    def copy_selection(self, event):
+        try:
+            self.text_widget.clipboard_clear()
+            selected_text = self.text_widget.get("sel.first", "sel.last")
+            self.text_widget.clipboard_append(selected_text)
+        except tk.TclError:
+            pass
+
+
+# Utility function for printing to the console widget
+def console_print(console, text):
+    console.insert("end", text + "\n")
+    console.see("end")
+    console.update()
 
 
 class Application(tk.Frame):
@@ -86,11 +104,10 @@ class Application(tk.Frame):
         self.top_frame.pack(side="top", fill="x", expand=False)
         self.bottom_frame.pack(side="bottom", fill="both", expand=True)
         self.create_widgets()
+        self.trained_model = None
 
     def create_widgets(self):
         """Creates widgets on initial window."""
-        print("Creating widgets...")
-
         experiment_label = tk.Label(self.top_frame,
                       text="""Experiment Name""",
                       font=tkFont.Font(family="Calibri", size=14))
@@ -185,6 +202,42 @@ For typical use, leave these settings unchanged.""",
                              anchor='w')
 
         experiments_combo.grid(row=0, column=1, sticky='w', pady=2)
+        self.experiment_path_label = tk.Label(self.top_frame, text="📁", fg="blue", font=tkFont.Font(family="Calibri", size=14))
+        self.experiment_path_label.config(cursor="hand2")
+        self.experiment_path_label.grid(row=0, column=2, sticky='w', padx=(10, 0))
+
+        self.experiment_tooltip = tk.StringVar()
+        tooltip_label = tk.Label(self.top_frame, text="", font=tkFont.Font(family="Calibri", size=10), fg="gray")
+
+        def update_experiment_path(*args):
+            experiment = self.experiment.get()
+            if experiment in settings.experiments:
+                path = settings.experiments[experiment]['root']
+                self.experiment_tooltip.set(path)
+            else:
+                self.experiment_tooltip.set("")
+
+        def open_experiment_folder(event=None):
+            experiment = self.experiment.get()
+            if experiment in settings.experiments:
+                folder_path = settings.experiments[experiment]['root']
+                import subprocess
+                subprocess.run(["open", folder_path])
+
+        def show_tooltip(event=None):
+            tooltip_label.config(text=self.experiment_tooltip.get())
+            # Place tooltip slightly below and to the right of the icon, relative to top_frame
+            tooltip_label.place(x=event.x_root - self.top_frame.winfo_rootx(), y=event.y_root - self.top_frame.winfo_rooty() + 20)
+
+        def hide_tooltip(event=None):
+            tooltip_label.place_forget()
+
+        self.experiment.trace_add('write', lambda *args: update_experiment_path())
+        update_experiment_path()
+
+        self.experiment_path_label.bind("<Button-1>", open_experiment_folder)
+        self.experiment_path_label.bind("<Enter>", show_tooltip)
+        self.experiment_path_label.bind("<Leave>", hide_tooltip)
         marker_combo.grid(row=1, column=1, sticky='w', pady=2)
         val_size_entry.grid(row=2, column=1, sticky='w', pady=2)
         test_size_entry.grid(row=3, column=1, sticky='w', pady=2)
@@ -198,13 +251,26 @@ For typical use, leave these settings unchanged.""",
 
         button2.pack(side="top")
 
+        # convert TIF to PNG button
+        button4 = tk.Button(self.bottom_frame,
+                            text="Convert TIF to PNG in o4modelimages",
+                            command=lambda: self.convert_tif_to_png(),
+                            font=tkFont.Font(family="Calibri", size=12))
+        button4.pack(side="top")
+
         # train model button
         button3 = tk.Button(self.bottom_frame,
                             text="Train model using local images",
                             command=lambda: self.train_model(),
                             font=tkFont.Font(family="Calibri", size=12))
-
         button3.pack(side="top")
+
+        # Analyze misclassified images button
+        button_misclassify = tk.Button(self.bottom_frame,
+                            text="Analyze misclassified test images",
+                            command=lambda: self.analyze_misclassifications(),
+                            font=tkFont.Font(family="Calibri", size=12))
+        button_misclassify.pack(side="top")
 
         # define output console area
         tk.Label(self.bottom_frame,
@@ -229,8 +295,47 @@ For typical use, leave these settings unchanged.""",
                                     length=200, orient=tk.HORIZONTAL, mode='determinate')
         self.progress.pack(side="bottom", fill="y", expand=True)
 
-        text_redirector = TextRedirector(self.console)
-        sys.stdout = text_redirector
+        # temporarily disable redirector
+        #text_redirector = TextRedirector(self.console)
+        #sys.stdout = text_redirector
+
+    def convert_tif_to_png(self):
+        """
+        Recursively convert all .tif images in o4modelimages/ to .png format.
+        Retains original .tif images as backup.
+        Only converts .tif files if the corresponding .png does not already exist.
+        """
+        import glob
+        import os
+
+        # Initialize and reset the progress bar
+        self.progress["value"] = 0
+        self.progress.update()
+
+        tif_files = glob.glob(os.path.join(base_dir, '**', '*.tif'), recursive=True)
+        console_print(self.console, f"\nFound {len(tif_files)} .tif files in {base_dir}")
+
+        progress_increment = 100 / len(tif_files) if tif_files else 0
+
+        for tif_path in tif_files:
+            png_path = tif_path.rsplit('.', 1)[0] + '.png'
+            if os.path.exists(png_path):
+                console_print(self.console, f"\nSkipping {tif_path}, PNG already exists.")
+                # Update progress bar even if skipping
+                self.progress["value"] += progress_increment
+                self.progress.update()
+                continue
+            try:
+                with Image.open(tif_path) as im:
+                    im.convert('RGB').save(png_path, format='PNG')
+                console_print(self.console, f"\nConverted {tif_path} -> {png_path}")
+            except Exception as e:
+                console_print(self.console, f"\nFailed to convert {tif_path}: {e}")
+            # Update progress bar after each file
+            self.progress["value"] += progress_increment
+            self.progress.update()
+
+        console_print(self.console, f"\nConversion complete.")
 
     def setupLocalFolders(self, base_dir, empty: bool = False):
         """
@@ -267,8 +372,9 @@ For typical use, leave these settings unchanged.""",
         """
         Parses annotations.json for the selected experiment and distributes cell images
         into training, validation, and test folders based on their O4 annotation status.
+        If the input image is a .tif, it is converted to .png using PIL.
         """
-        print(f"Starting local consolidation of images for model training & validation.")
+        console_print(self.console, f"\nStarting local consolidation of images for model training & validation.")
 
         self.setupLocalFolders(base_dir, empty=True)
 
@@ -282,7 +388,7 @@ For typical use, leave these settings unchanged.""",
             with open(filename, 'r') as f:
                 annotations = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading annotations.json: {e}")
+            console_print(self.console, f"\nError loading annotations.json: {e}")
             return
 
         train_o4pos_i = train_o4neg_i = 0
@@ -295,8 +401,8 @@ For typical use, leave these settings unchanged.""",
         fileNumber = len(annotations)
         progress_increment = 100 / fileNumber
 
-        print(f"Found {len(annotations)} cells in this experiment.")
-        print("Starting copy operation...")
+        console_print(self.console, f"\nFound {len(annotations)} cells in this experiment.")
+        console_print(self.console, f"Starting copy operation...")
 
         for cell in annotations:
 
@@ -306,7 +412,7 @@ For typical use, leave these settings unchanged.""",
 
             if not self.marker.get() in cell:
                 # not a valid cell
-                print(f"No marker for cell {cell['cell']}")
+                console_print(self.console, f"\nNo marker for cell {cell['cell']}")
                 continue
 
             src = fullPath(os.path.join(settings.experiments[experiment]['root'], 'keras'), cell['cell'])
@@ -314,7 +420,7 @@ For typical use, leave these settings unchanged.""",
 
             if not os.path.exists(src):
                 # image file not found, most likely renamed during manual annotation
-                print(f"No image for cell {cell['cell']}")
+                console_print(self.console, f"\nNo image for cell {cell['cell']}")
                 continue
 
             if cell[self.marker.get()] == 1:
@@ -347,18 +453,28 @@ For typical use, leave these settings unchanged.""",
                 """ Cell annotation not set or unknown '-1'. """
                 continue
 
-            # copy image file to local folder for model building
-            shutil.copyfile(src, dst)
+            # Convert .tif to .png and update dst, or skip/warn for non-.tif images
+            if cell['cell'].lower().endswith('.tif'):
+                dst = dst.rsplit('.', 1)[0] + '.png'
+                try:
+                    im = Image.open(src)
+                    im.convert('RGB').save(dst, format='PNG')
+                except Exception as e:
+                    console_print(self.console, f"\nError converting {src} to PNG: {e}")
+                    continue
+            else:
+                console_print(self.console, f"\nSkipping non-TIF image: {src}")
+                continue
 
-        print(f"total training o4- images: {len(os.listdir(self.train_o4neg_dir))}")
-        print(f"total training o4+ images: {len(os.listdir(self.train_o4pos_dir))}")
-        print(f"total validation o4- images: {len(os.listdir(self.validation_o4neg_dir))}")
-        print(f"total validation o4+ images: {len(os.listdir(self.validation_o4pos_dir))}")
-        print(f"total test o4- images: {len(os.listdir(self.test_o4neg_dir))}")
-        print(f"total test o4+ images: {len(os.listdir(self.test_o4pos_dir))}")
+        console_print(self.console, f"\ntotal training o4- images: {len(os.listdir(self.train_o4neg_dir))}")
+        console_print(self.console, f"\ntotal training o4+ images: {len(os.listdir(self.train_o4pos_dir))}")
+        console_print(self.console, f"\ntotal validation o4- images: {len(os.listdir(self.validation_o4neg_dir))}")
+        console_print(self.console, f"\ntotal validation o4+ images: {len(os.listdir(self.validation_o4pos_dir))}")
+        console_print(self.console, f"\ntotal test o4- images: {len(os.listdir(self.test_o4neg_dir))}")
+        console_print(self.console, f"\ntotal test o4+ images: {len(os.listdir(self.test_o4pos_dir))}")
 
-        print("All Done. Ready for model fitting.")
-        print("**********************************")
+        console_print(self.console, f"\nAll Done. Ready for model fitting.")
+        console_print(self.console, f"\n**********************************")
 
     def train_model(self):
         """
@@ -379,9 +495,9 @@ For typical use, leave these settings unchanged.""",
         from keras import models
         from keras import layers
         from tensorflow.keras.optimizers import Adam
-        from tensorflow.keras.preprocessing.image import ImageDataGenerator
         from keras.callbacks import EarlyStopping
         from keras.metrics import AUC, Precision, Recall
+        from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
         # Parse model parameters from GUI
         filter_list = [int(f.strip()) for f in self.filters.get().split(',')]
@@ -403,62 +519,78 @@ For typical use, leave these settings unchanged.""",
         model.compile(optimizer=Adam(learning_rate=1e-4),
                       loss='binary_crossentropy',
                       metrics=['accuracy', Precision(), Recall(), AUC()])
-        print(model.summary())
+        model.summary(print_fn=lambda x: console_print(self.console, x))
 
         # Set up data generators with augmentation for training and rescaling for validation
-        train_datagen = ImageDataGenerator(
-            rescale=1. / 255,
-            rotation_range=90,
-            horizontal_flip=True,
-            fill_mode='nearest')
+        import tensorflow as tf
+        from tensorflow.keras.utils import image_dataset_from_directory
 
-        validation_datagen = ImageDataGenerator(
-            rescale=1. / 255)
+        AUTOTUNE = tf.data.AUTOTUNE
 
-        print("Setup training dataset folder.")
-        # Create data loaders from image directories
-        train_generator = train_datagen.flow_from_directory(
+        console_print(self.console, f"\nSetting up training dataset using image_dataset_from_directory...")
+        train_generator = image_dataset_from_directory(
             self.train_dir,
-            target_size=(128, 128),
+            image_size=(128, 128),
             batch_size=batch_size,
-            class_mode='binary')
+            label_mode='binary',
+            shuffle=True
+        ).prefetch(buffer_size=AUTOTUNE)
+        train_count = sum(1 for _ in train_generator)
+        console_print(self.console, f"Found {train_count * batch_size} files belonging to 2 classes.")
 
-        print("Setup validation dataset folder.")
-        validation_generator = validation_datagen.flow_from_directory(
+        console_print(self.console, f"\nSetting up validation dataset using image_dataset_from_directory...")
+        validation_generator = image_dataset_from_directory(
             self.validation_dir,
-            target_size=(128, 128),
+            image_size=(128, 128),
             batch_size=batch_size,
-            class_mode='binary')
+            label_mode='binary',
+            shuffle=False
+        ).prefetch(buffer_size=AUTOTUNE)
+        val_count = sum(1 for _ in validation_generator)
+        console_print(self.console, f"Found {val_count * batch_size} files belonging to 2 classes.")
 
         # Compute class weights to address O4+ underrepresentation
         from sklearn.utils.class_weight import compute_class_weight
         import numpy as np
-
-        train_labels = train_generator.classes
+        # Collect true labels from train_generator (tf.data.Dataset)
+        train_labels = np.concatenate([np.array(y) for _, y in train_generator], axis=0).astype(int).flatten()
         class_weights = compute_class_weight(
             class_weight='balanced',
             classes=np.unique(train_labels),
             y=train_labels)
         class_weight_dict = dict(enumerate(class_weights))
-        print("Class weights:", class_weight_dict)
+        console_print(self.console, f"\nClass weights: {class_weight_dict}")
 
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
-        print("****************")
-        print("Fitting model...")
-        # Train the model using class weights and early stopping
+        # --- Custom console logger callback for Keras training ---
+        class ConsoleLogger(tf.keras.callbacks.Callback):
+            def __init__(self, console):
+                super().__init__()
+                self.console = console
+
+            def on_epoch_end(self, epoch, logs=None):
+                logs = logs or {}
+                msg = f"Epoch {epoch + 1}: " + ", ".join(f"{k}={v:.4f}" for k, v in logs.items())
+                console_print(self.console, msg)
+        # --------------------------------------------------------
+
+        console_print(self.console, f"\n****************")
+        console_print(self.console, f"\nFitting model...")
+        # Train the model using class weights and early stopping and console logger
         history = model.fit(
             train_generator,
             epochs=epochs,
             validation_data=validation_generator,
             validation_steps=len(validation_generator),
             class_weight=class_weight_dict,
-            callbacks=[early_stopping])
-        print("Done.")
-        print("****************")
+            callbacks=[early_stopping, ConsoleLogger(self.console)])
+        console_print(self.console, f"\nDone.")
+        console_print(self.console, f"\n****************")
 
         # Save the trained model
         model.save(os.path.join(root_folder, settings.kerasModel))
+        self.trained_model = model
 
         acc = history.history['accuracy']
         val_acc = history.history['val_accuracy']
@@ -475,30 +607,66 @@ For typical use, leave these settings unchanged.""",
                 w.writerow([acc[i], val_acc[i], loss[i], val_loss[i]])
 
         # Prepare test data generator
-        print("****************")
-        print("Evaluating model...")
-        test_datagen = ImageDataGenerator(rescale=1. / 255)
-
-        test_generator = test_datagen.flow_from_directory(
+        console_print(self.console, f"\n****************")
+        console_print(self.console, f"\nEvaluating model...")
+        test_generator = image_dataset_from_directory(
             self.test_dir,
-            target_size=(128, 128),
-            batch_size=20,
-            class_mode='binary')
-        print("Done.")
+            image_size=(128, 128),
+            batch_size=batch_size,
+            label_mode='binary',
+            shuffle=False
+        ).prefetch(buffer_size=tf.data.AUTOTUNE)
+        console_print(self.console, f"\nDone.")
 
         # Evaluate model on test data and output performance
-        test_loss, test_acc = model.evaluate(test_generator, steps=50)
+        test_loss, test_acc, test_precision, test_recall, test_auc = model.evaluate(test_generator)
+        console_print(self.console, f"\nTest accuracy: {test_acc}")
+        console_print(self.console, f"\nTest precision: {test_precision}")
+        console_print(self.console, f"\nTest recall: {test_recall}")
+        console_print(self.console, f"\nTest AUC: {test_auc}")
         # Advanced evaluation: confusion matrix and ROC-AUC
         from sklearn.metrics import confusion_matrix, roc_auc_score
 
         y_pred_probs = model.predict(test_generator, steps=50)
         y_pred = (y_pred_probs > 0.5).astype(int).flatten()
-        y_true = test_generator.classes[:len(y_pred)]
 
-        print("Confusion Matrix:")
+        # --- Identify and save misclassified image filenames ---
+        # Get filenames from test_generator
+        file_paths = []
+        for batch in test_generator:
+            images, labels = batch
+            if hasattr(images, 'file_paths'):  # Not available in tf.data Dataset, so this is just a placeholder
+                file_paths.extend(images.file_paths)
+
+        # Workaround: manually collect file paths using glob
+        import glob
+        test_image_paths = sorted(glob.glob(os.path.join(self.test_dir, '*', '*.png')))
+
+        misclassified_dir = os.path.join(root_folder, "misclassified")
+        os.makedirs(misclassified_dir, exist_ok=True)
+
+        # Get true labels
+        y_true = [y.numpy() for _, y in test_generator]
+        y_true = tf.concat(y_true, axis=0)[:len(y_pred)]
+
+        import os
+        import shutil
+        for i, (yp, yt) in enumerate(zip(y_pred, y_true)):
+            if yp != yt:
+                src_path = test_image_paths[i]
+                fname = os.path.basename(src_path)
+                pred_label = "o4pos" if yp == 1 else "o4neg"
+                true_label = "o4pos" if yt == 1 else "o4neg"
+                dst_path = os.path.join(misclassified_dir, f"{true_label}_as_{pred_label}_{fname}")
+                shutil.copy2(src_path, dst_path)
+
+        console_print(self.console, f"\nSaved misclassified images to {misclassified_dir}")
+        # --- End misclassified block ---
+
+        console_print(self.console, f"\nConfusion Matrix:")
         cm = confusion_matrix(y_true, y_pred)
-        print(cm)
-        print("ROC-AUC:", roc_auc_score(y_true, y_pred_probs[:len(y_true)]))
+        console_print(self.console, f"{cm}")
+        console_print(self.console, f"\nROC-AUC: {roc_auc_score(y_true, y_pred_probs[:len(y_true)])}")
 
         # Save confusion matrix to CSV
         import pandas as pd
@@ -517,10 +685,66 @@ For typical use, leave these settings unchanged.""",
         plt.savefig(os.path.join(root_folder, 'confusion_matrix.png'))
         plt.close()
 
+    def analyze_misclassifications(self):
+        import os  # Ensure os is imported before use
+        # Ensure test_dir is initialized before use
+        self.setupLocalFolders(base_dir, empty=False)
+        if self.trained_model is None:
+            # Load model if not already loaded
+            import keras
+            root_folder = settings.experiments[self.experiment.get()]['root']
+            model_path = os.path.join(root_folder, settings.kerasModel)
+            self.trained_model = keras.models.load_model(model_path)
 
+        import tensorflow as tf
+        import shutil
+        import numpy as np
+        import glob
+
+        from sklearn.metrics import confusion_matrix, roc_auc_score
+
+        test_generator = tf.keras.utils.image_dataset_from_directory(
+            self.test_dir,
+            image_size=(128, 128),
+            batch_size=64,
+            label_mode='binary',
+            shuffle=False
+        ).prefetch(buffer_size=tf.data.AUTOTUNE)
+
+        y_pred_probs = self.trained_model.predict(test_generator)
+        y_pred = (y_pred_probs > 0.5).astype(int).flatten()
+        y_true = [y.numpy() for _, y in test_generator]
+        y_true = tf.concat(y_true, axis=0)[:len(y_pred)]
+
+        test_image_paths = sorted(glob.glob(os.path.join(self.test_dir, '*', '*.png')))
+        root_folder = settings.experiments[self.experiment.get()]['root']
+        misclassified_dir = os.path.join(root_folder, "misclassified")
+        os.makedirs(misclassified_dir, exist_ok=True)
+
+        for i, (yp, yt) in enumerate(zip(y_pred, y_true)):
+            if yp != yt:
+                src_path = test_image_paths[i]
+                fname = os.path.basename(src_path)
+                pred_label = "o4pos" if yp == 1 else "o4neg"
+                true_label = "o4pos" if yt == 1 else "o4neg"
+                dst_path = os.path.join(misclassified_dir, f"{true_label}_as_{pred_label}_{fname}")
+                shutil.copy2(src_path, dst_path)
+
+        console_print(self.console, f"\nSaved misclassified images to {misclassified_dir}")
+        cm = confusion_matrix(y_true, y_pred)
+        console_print(self.console, f"\nConfusion Matrix:\n{cm}")
+        console_print(self.console, f"\nROC-AUC: {roc_auc_score(y_true, y_pred_probs[:len(y_true)])}")
 # Starts application.
 root = tk.Tk()
 root.geometry('+100+100')
 root.resizable(width=False, height=False)
+
+# Bring window to front
+root.lift()
+root.attributes('-topmost', True)
+root.focus_force()
+root.after_idle(root.attributes, '-topmost', False)
+
 app = Application(master=root)
 app.mainloop()
+
